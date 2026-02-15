@@ -1,0 +1,303 @@
+
+import React, { useState, useCallback } from 'react';
+import { Header } from './components/Header';
+import { Footer } from './components/Footer';
+import { UserInputForm } from './components/UserInputForm';
+import { ResultsDisplay } from './components/ResultsDisplay';
+import { LoadingSpinner } from './components/LoadingSpinner'; // Keep for small loads inside components
+import { AdSenseLoadingOverlay } from './components/AdSenseLoadingOverlay'; // NEW
+import { AdminPanel } from './components/AdminPanel'; // NEW
+import { DesignStudio } from './components/DesignStudio';
+import { 
+    generateProjectPlan, 
+    generateVisualizations, 
+    analyzeFloorplan, 
+    modifyImageStyle,
+    generateMasterTemplate,
+    generateMaterialDetails,
+    generateProjectPackage,
+    createVirtualPlanFromDimensions
+} from './services/geminiService';
+import { AppState, ProjectDetails, GeneratedPlan } from './types';
+
+const App: React.FC = () => {
+  const [appState, setAppState] = useState<AppState>(AppState.INPUT);
+  const [projectDetails, setProjectDetails] = useState<ProjectDetails | null>(null);
+  const [isometricView, setIsometricView] = useState<{ data: string; mimeType: string; } | null>(null);
+  const [perspectiveView, setPerspectiveView] = useState<{ data: string; mimeType: string; } | null>(null);
+  const [generatedPlan, setGeneratedPlan] = useState<GeneratedPlan | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [isModifying, setIsModifying] = useState<boolean>(false);
+  
+  // Admin Panel State
+  const [showAdmin, setShowAdmin] = useState(false);
+  
+  const processProject = async (details: ProjectDetails) => {
+      setProjectDetails(details);
+      setError(null);
+      
+      const isDemo = details.isDemo === true;
+      const skip3D = !details.wants3DGeneration; 
+
+      try {
+        setAppState(AppState.ANALYZING_PLAN);
+        
+        let virtualPlan;
+        
+        // Handle "Dimensions Only" mode for Bathroom
+        if (details.projectScope === 'bathroom' && 
+            details.bathroomSpecifics?.useDimensionsOnly && 
+            details.bathroomSpecifics.width && 
+            details.bathroomSpecifics.depth) {
+            
+            // Skip AI analysis and create a virtual plan from dimensions directly
+            virtualPlan = createVirtualPlanFromDimensions(
+                details.bathroomSpecifics.width, 
+                details.bathroomSpecifics.depth,
+                'BATHROOM'
+            );
+            // Artificial delay to mimic processing feel if desired, or just proceed immediately
+            if (isDemo) await new Promise(resolve => setTimeout(resolve, 2000)); // Increased demo delay for ad viewing
+
+        } else {
+            // Standard AI Analysis from Image
+            try {
+                virtualPlan = await analyzeFloorplan(details.image, isDemo);
+            } catch (analysisError) {
+                console.warn("AI Floorplan Analysis failed, falling back to area-based estimation.", analysisError);
+                // Fallback: Create a simple virtual plan based on the area input
+                // This ensures the flow continues even if the Gemini Flash model for image analysis fails.
+                const areaM2 = details.area * 3.3058;
+                // Assuming a square shape for estimation
+                const side = Math.sqrt(areaM2);
+                const roomType = details.projectScope === 'bathroom' ? 'BATHROOM' : 'LIVING_ROOM';
+                virtualPlan = createVirtualPlanFromDimensions(side, side, roomType);
+            }
+        }
+
+        const detailsWithPlan = { ...details, virtualPlan };
+        setProjectDetails(detailsWithPlan);
+
+        if (skip3D) {
+            // New Workflow: Material -> Estimate
+            await handleFinalizeLogic(detailsWithPlan);
+        } else {
+            setAppState(AppState.GENERATING_VIEWS);
+            const { isometricView, perspectiveView } = await generateVisualizations(
+                virtualPlan, 
+                details.image,
+                details.modelType,
+                isDemo,
+                details.projectScope
+            );
+            
+            setIsometricView(isometricView);
+            setPerspectiveView(perspectiveView);
+            setAppState(AppState.DESIGN_STUDIO);
+        }
+
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred.';
+        setError(`AI 처리 중 오류가 발생했습니다: ${errorMessage}`);
+        setAppState(AppState.INPUT);
+        console.error(err);
+      }
+  };
+
+  // Helper to centralize the final generation logic (Parallel Execution for Speed)
+  const handleFinalizeLogic = async (details: ProjectDetails) => {
+      setAppState(AppState.FINALIZING);
+      try {
+        // [CRITICAL UPDATE] Generate EVERYTHING at once.
+        // The user wants full data immediately. No more lazy loading buttons.
+        // 1. Generate Material Sheet & Prompts
+        // 2. Generate Base Plan (Estimate, Schedule)
+        // 3. Generate Project Package (Checklist, Folder structure)
+        
+        const [materialResult, planResult, packageResult] = await Promise.all([
+            generateMaterialDetails(details, []),
+            generateProjectPlan(details, undefined, false),
+            generateProjectPackage(details)
+        ]);
+
+        // 4. Generate Master Template (Requires Plan Result)
+        // This runs after planResult is ready.
+        const masterTemplateResult = await generateMasterTemplate(details, planResult);
+        
+        // Combine results into one massive object
+        const finalPlan: GeneratedPlan = { 
+            ...planResult, 
+            materialDetailSheet: materialResult.sheet, 
+            materialBoardPrompts: materialResult.prompts,
+            projectPackage: packageResult,
+            masterTemplate: masterTemplateResult
+        };
+        
+        setGeneratedPlan(finalPlan);
+        setAppState(AppState.RESULTS);
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred.';
+        setError(`최종 견적 생성 중 오류가 발생했습니다: ${errorMessage}`);
+        setAppState(AppState.INPUT);
+      }
+  };
+
+  const handleInitialSubmit = useCallback(async (details: ProjectDetails) => {
+    await processProject(details);
+  }, []);
+
+  const handleStyleModification = useCallback(async (viewToModify: 'iso' | 'pers', prompt: string) => {
+    const baseImage = viewToModify === 'iso' ? isometricView : perspectiveView;
+    if (!projectDetails || !baseImage) return;
+
+    setIsModifying(true);
+    setError(null);
+    try {
+        const modifiedImage = await modifyImageStyle(
+            baseImage, 
+            prompt, 
+            projectDetails.virtualPlan,
+            projectDetails.modelType,
+            projectDetails.isDemo
+        );
+        if (viewToModify === 'iso') {
+            setIsometricView(modifiedImage);
+        } else {
+            setPerspectiveView(modifiedImage);
+        }
+    } catch (err) {
+        setError('스타일 변경에 실패했습니다. 요청을 더 명확하게 하거나 다시 시도해주세요.');
+        console.error(err);
+    } finally {
+        setIsModifying(false);
+    }
+  }, [projectDetails, isometricView, perspectiveView]);
+
+  const handleFinalizeDesign = useCallback(async () => {
+    if (!projectDetails) return;
+    
+    const finalDetails = { 
+      ...projectDetails, 
+      isometricView: isometricView || undefined,
+      perspectiveView: perspectiveView || undefined 
+    };
+    setProjectDetails(finalDetails);
+
+    // Call the new centralized logic
+    await handleFinalizeLogic(finalDetails);
+
+  }, [projectDetails, isometricView, perspectiveView]);
+  
+  // Handlers for "Refresh" (Optional now, but kept for manual re-generation if needed)
+  const handleLoadMasterTemplate = async () => {
+      // Re-generate logic if user wants to refresh
+      if (!projectDetails || !generatedPlan) return;
+      const masterTemplate = await generateMasterTemplate(projectDetails, generatedPlan);
+      setGeneratedPlan(prev => prev ? { ...prev, masterTemplate } : null);
+  };
+
+  const handleLoadMaterials = async () => {
+      if (!projectDetails) return;
+      const { sheet, prompts } = await generateMaterialDetails(projectDetails);
+      setGeneratedPlan(prev => prev ? { ...prev, materialDetailSheet: sheet, materialBoardPrompts: prompts } : null);
+  };
+
+  const handleLoadPackage = async () => {
+      if (!projectDetails) return;
+      const projectPackage = await generateProjectPackage(projectDetails);
+      setGeneratedPlan(prev => prev ? { ...prev, projectPackage } : null);
+  };
+
+  const handleReset = useCallback(() => {
+    setAppState(AppState.INPUT);
+    setProjectDetails(null);
+    setGeneratedPlan(null);
+    setIsometricView(null);
+    setPerspectiveView(null);
+    setError(null);
+  }, []);
+
+  const renderContent = () => {
+    const isBathroomMode = projectDetails?.projectScope === 'bathroom';
+
+    switch (appState) {
+      case AppState.INPUT:
+        return <UserInputForm onSubmit={handleInitialSubmit} error={error} />;
+        
+      case AppState.ANALYZING_PLAN:
+        return (
+          <AdSenseLoadingOverlay 
+            message={isBathroomMode ? "욕실 구조 및 치수 분석 중..." : "전체 공간 구조 분석 및 객체 인식 중..."}
+            subMessage={projectDetails?.isDemo 
+                ? "데모 데이터를 로딩하고 있습니다." 
+                : "AI가 도면을 정밀하게 분석하여 벽체, 문, 창문을 식별하고 있습니다."}
+          />
+        );
+
+      case AppState.GENERATING_VIEWS:
+        return (
+          <AdSenseLoadingOverlay 
+            message="AI 인테리어 디자인 생성 중..."
+            subMessage="선택하신 스타일과 자재를 적용하여 3D 시각화 자료(아이소/투시도)를 그리고 있습니다."
+          />
+        );
+
+      case AppState.DESIGN_STUDIO:
+        if (projectDetails && isometricView && perspectiveView) {
+             return (
+              <DesignStudio
+                projectDetails={projectDetails}
+                isometricView={isometricView}
+                perspectiveView={perspectiveView}
+                onModifyStyle={handleStyleModification}
+                onFinalize={handleFinalizeDesign}
+                isModifying={isModifying}
+                onBack={handleReset}
+                error={error}
+              />
+            );
+        }
+        return <LoadingSpinner />;
+
+       case AppState.FINALIZING:
+        return (
+           <AdSenseLoadingOverlay 
+            message="종합 리포트 및 자재/공정 데이터 전체 생성 중..."
+            subMessage="상세 견적, 자재 구매 링크, 공정표, 납품 패키지를 한 번에 모두 생성하고 있습니다. (약 15초 소요)"
+          />
+        );
+
+      case AppState.RESULTS:
+        return generatedPlan && projectDetails && (
+          <ResultsDisplay 
+            plan={generatedPlan} 
+            details={projectDetails}
+            onReset={handleReset}
+            onLoadMasterTemplate={handleLoadMasterTemplate}
+            onLoadMaterials={handleLoadMaterials}
+            onLoadPackage={handleLoadPackage}
+          />
+        );
+      default:
+        return <UserInputForm onSubmit={handleInitialSubmit} error={error} />;
+    }
+  };
+
+  return (
+    <div className="min-h-screen flex flex-col font-sans text-gray-800">
+      <Header onOpenAdmin={() => setShowAdmin(true)} />
+      <main className="flex-grow container mx-auto px-4 py-8 relative">
+        {renderContent()}
+      </main>
+      <Footer />
+      {showAdmin && (
+        <AdminPanel 
+            onClose={() => setShowAdmin(false)} 
+            initialAddress={projectDetails?.address} 
+        />
+      )}
+    </div>
+  );
+};
+
+export default App;
