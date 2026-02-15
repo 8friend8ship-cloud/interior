@@ -16,6 +16,7 @@ import {
     generateMasterTemplate,
     generateMaterialDetails,
     generateProjectPackage,
+    generateProjectSchedule, // NEW Import
     createVirtualPlanFromDimensions
 } from './services/geminiService';
 import { AppState, ProjectDetails, GeneratedPlan } from './types';
@@ -29,12 +30,16 @@ const App: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [isModifying, setIsModifying] = useState<boolean>(false);
   
+  // Loading States for partial updates
+  const [loadingSection, setLoadingSection] = useState<'materials' | 'package' | 'report' | 'schedule' | null>(null);
+
   // Admin Panel State
   const [showAdmin, setShowAdmin] = useState(false);
   
   const processProject = async (details: ProjectDetails) => {
       setProjectDetails(details);
       setError(null);
+      setGeneratedPlan(null); // Reset plan
       
       const isDemo = details.isDemo === true;
       const skip3D = !details.wants3DGeneration; 
@@ -57,7 +62,7 @@ const App: React.FC = () => {
                 'BATHROOM'
             );
             // Artificial delay to mimic processing feel if desired, or just proceed immediately
-            if (isDemo) await new Promise(resolve => setTimeout(resolve, 2000)); // Increased demo delay for ad viewing
+            if (isDemo) await new Promise(resolve => setTimeout(resolve, 1500)); 
 
         } else {
             // Standard AI Analysis from Image
@@ -65,10 +70,7 @@ const App: React.FC = () => {
                 virtualPlan = await analyzeFloorplan(details.image, isDemo);
             } catch (analysisError) {
                 console.warn("AI Floorplan Analysis failed, falling back to area-based estimation.", analysisError);
-                // Fallback: Create a simple virtual plan based on the area input
-                // This ensures the flow continues even if the Gemini Flash model for image analysis fails.
                 const areaM2 = details.area * 3.3058;
-                // Assuming a square shape for estimation
                 const side = Math.sqrt(areaM2);
                 const roomType = details.projectScope === 'bathroom' ? 'BATHROOM' : 'LIVING_ROOM';
                 virtualPlan = createVirtualPlanFromDimensions(side, side, roomType);
@@ -79,7 +81,7 @@ const App: React.FC = () => {
         setProjectDetails(detailsWithPlan);
 
         if (skip3D) {
-            // New Workflow: Material -> Estimate
+            // New Workflow: Go directly to Estimate (Step 1)
             await handleFinalizeLogic(detailsWithPlan);
         } else {
             setAppState(AppState.GENERATING_VIEWS);
@@ -104,40 +106,24 @@ const App: React.FC = () => {
       }
   };
 
-  // Helper to centralize the final generation logic (Parallel Execution for Speed)
+  // Step 1: Generate Basic Estimate Only
   const handleFinalizeLogic = async (details: ProjectDetails) => {
       setAppState(AppState.FINALIZING);
       try {
-        // [CRITICAL UPDATE] Generate EVERYTHING at once.
-        // The user wants full data immediately. No more lazy loading buttons.
-        // 1. Generate Material Sheet & Prompts
-        // 2. Generate Base Plan (Estimate, Schedule)
-        // 3. Generate Project Package (Checklist, Folder structure)
-        
-        const [materialResult, planResult, packageResult] = await Promise.all([
-            generateMaterialDetails(details, []),
-            generateProjectPlan(details, undefined, false),
-            generateProjectPackage(details)
-        ]);
+        const timeoutPromise = new Promise((_, reject) => 
+            setTimeout(() => reject(new Error("AI 응답 시간이 초과되었습니다. 다시 시도해주세요.")), 60000)
+        );
 
-        // 4. Generate Master Template (Requires Plan Result)
-        // This runs after planResult is ready.
-        const masterTemplateResult = await generateMasterTemplate(details, planResult);
+        const logicPromise = generateProjectPlan(details, undefined, false);
+
+        // Race the logic against the timeout
+        const basicPlan = await Promise.race([logicPromise, timeoutPromise]) as GeneratedPlan;
         
-        // Combine results into one massive object
-        const finalPlan: GeneratedPlan = { 
-            ...planResult, 
-            materialDetailSheet: materialResult.sheet, 
-            materialBoardPrompts: materialResult.prompts,
-            projectPackage: packageResult,
-            masterTemplate: masterTemplateResult
-        };
-        
-        setGeneratedPlan(finalPlan);
+        setGeneratedPlan(basicPlan);
         setAppState(AppState.RESULTS);
       } catch (err) {
         const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred.';
-        setError(`최종 견적 생성 중 오류가 발생했습니다: ${errorMessage}`);
+        setError(`견적 생성 중 오류가 발생했습니다: ${errorMessage}`);
         setAppState(AppState.INPUT);
       }
   };
@@ -183,29 +169,62 @@ const App: React.FC = () => {
     };
     setProjectDetails(finalDetails);
 
-    // Call the new centralized logic
     await handleFinalizeLogic(finalDetails);
 
   }, [projectDetails, isometricView, perspectiveView]);
   
-  // Handlers for "Refresh" (Optional now, but kept for manual re-generation if needed)
-  const handleLoadMasterTemplate = async () => {
-      // Re-generate logic if user wants to refresh
-      if (!projectDetails || !generatedPlan) return;
-      const masterTemplate = await generateMasterTemplate(projectDetails, generatedPlan);
-      setGeneratedPlan(prev => prev ? { ...prev, masterTemplate } : null);
-  };
+  // --- Partial Loaders (On Demand - Deep Dive) ---
 
   const handleLoadMaterials = async () => {
-      if (!projectDetails) return;
-      const { sheet, prompts } = await generateMaterialDetails(projectDetails);
-      setGeneratedPlan(prev => prev ? { ...prev, materialDetailSheet: sheet, materialBoardPrompts: prompts } : null);
+      if (!projectDetails || !generatedPlan) return;
+      setLoadingSection('materials');
+      try {
+          const { sheet, prompts } = await generateMaterialDetails(projectDetails);
+          setGeneratedPlan(prev => prev ? { ...prev, materialDetailSheet: sheet, materialBoardPrompts: prompts } : null);
+      } catch (e) {
+          alert("자재 상세 분석에 실패했습니다. 잠시 후 다시 시도해주세요.");
+      } finally {
+          setLoadingSection(null);
+      }
+  };
+  
+  const handleLoadSchedule = async () => {
+      if (!projectDetails || !generatedPlan) return;
+      setLoadingSection('schedule');
+      try {
+          const schedule = await generateProjectSchedule(projectDetails);
+          setGeneratedPlan(prev => prev ? { ...prev, projectSchedule: schedule } : null);
+      } catch (e) {
+          alert("상세 공정표 생성에 실패했습니다.");
+      } finally {
+          setLoadingSection(null);
+      }
   };
 
   const handleLoadPackage = async () => {
-      if (!projectDetails) return;
-      const projectPackage = await generateProjectPackage(projectDetails);
-      setGeneratedPlan(prev => prev ? { ...prev, projectPackage } : null);
+      if (!projectDetails || !generatedPlan) return;
+      setLoadingSection('package');
+      try {
+           const projectPackage = await generateProjectPackage(projectDetails);
+           setGeneratedPlan(prev => prev ? { ...prev, projectPackage } : null);
+      } catch (e) {
+          alert("패키지 데이터를 생성하는데 실패했습니다.");
+      } finally {
+          setLoadingSection(null);
+      }
+  };
+
+  const handleLoadMasterTemplate = async () => {
+      if (!projectDetails || !generatedPlan) return;
+      setLoadingSection('report');
+      try {
+          const masterTemplate = await generateMasterTemplate(projectDetails, generatedPlan);
+          setGeneratedPlan(prev => prev ? { ...prev, masterTemplate } : null);
+      } catch (e) {
+          alert("종합 리포트를 생성하는데 실패했습니다.");
+      } finally {
+          setLoadingSection(null);
+      }
   };
 
   const handleReset = useCallback(() => {
@@ -215,6 +234,7 @@ const App: React.FC = () => {
     setIsometricView(null);
     setPerspectiveView(null);
     setError(null);
+    setLoadingSection(null);
   }, []);
 
   const renderContent = () => {
@@ -262,8 +282,8 @@ const App: React.FC = () => {
        case AppState.FINALIZING:
         return (
            <AdSenseLoadingOverlay 
-            message="종합 리포트 및 자재/공정 데이터 전체 생성 중..."
-            subMessage="상세 견적, 자재 구매 링크, 공정표, 납품 패키지를 한 번에 모두 생성하고 있습니다. (약 15초 소요)"
+            message="최종 상세 견적 산출 중..."
+            subMessage="AI가 각 공정별 물량을 계산하고 시장 단가를 대입하여 견적서를 작성하고 있습니다. (약 15초 소요)"
           />
         );
 
@@ -275,7 +295,9 @@ const App: React.FC = () => {
             onReset={handleReset}
             onLoadMasterTemplate={handleLoadMasterTemplate}
             onLoadMaterials={handleLoadMaterials}
+            onLoadSchedule={handleLoadSchedule}
             onLoadPackage={handleLoadPackage}
+            loadingSection={loadingSection}
           />
         );
       default:

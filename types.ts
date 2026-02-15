@@ -56,21 +56,20 @@ export interface VirtualPlan {
 }
 
 export interface BathroomSpecifics {
-  type: 'overlay' | 'demolition'; // 덧방 vs 철거후방수
-  tileGrade: 'standard' | 'high_end'; // 300x600 vs 600각 포세린
-  ceilingType: 'smc' | 'barrisol' | 'paint'; // 존슨 지침: 천장 마감
-  isJollyCut: boolean; // 존슨 지침: 졸리컷 유무
-  // UPDATED: Wet Zone Configuration
+  type: 'overlay' | 'demolition'; 
+  tileGrade: 'standard' | 'high_end'; 
+  ceilingType: 'smc' | 'barrisol' | 'paint'; 
+  isJollyCut: boolean; 
   wetZoneMethod: 'bathtub' | 'partition' | 'booth' | 'tile_wall' | 'none'; 
-  vanityCount: number; // 존슨 지침: 세면대 개수 계수 (PART 2 반영)
-  cabinetType?: 'sliding' | 'standard' | 'flap'; // 상부장 타입
+  vanityCount: number; 
+  cabinetType?: 'sliding' | 'standard' | 'flap'; 
   hasGendai: boolean;
   replaceDoor?: boolean;
   removeRadiator?: boolean;
-  width?: number; // 가로 (m)
-  depth?: number; // 세로 (m)
-  height?: number; // 높이 (m)
-  useDimensionsOnly?: boolean; // 도면 없이 치수로만 진행 여부
+  width?: number; 
+  depth?: number; 
+  height?: number; 
+  useDimensionsOnly?: boolean; 
 }
 
 // Detailed Scope Flags
@@ -82,36 +81,59 @@ export interface DetailedScope {
     };
     wallpaper: 'all_silk' | 'all_paper' | 'combo'; 
     
-    // UPDATED: Flooring Details
     flooring: {
         layout: 'all_maru' | 'all_jangpan' | 'all_tile' | 'mix_tile_maru' | 'mix_maru_jangpan';
         specs: {
-            maru: 'gang' | 'texture'; // 강마루, 광폭텍스쳐
-            jangpan: '1.8' | '2.2' | '5.0'; // 두께
-            tile: '600' | '800'; // 타일 크기
+            maru: 'gang' | 'texture'; 
+            jangpan: '1.8' | '2.2' | '5.0'; 
+            tile: '600' | '800' | '600_1200'; 
         }
     };
 
     sash: 'all' | 'partial';
     sashCondition?: string;
-    
+    sashConfig?: {
+        brand: 'kcc' | 'lx' | 'hyundai';
+        glass: 'general_22' | 'low_e_24' | 'triple_system'; 
+        windowType: 'double' | 'system'; 
+    };
+
     door: {
         mode: 'replace_all' | 'replace_door_film_frame' | 'film_both' | 'paint_both';
     };
 
-    // NEW: Carpentry Details
-    molding?: {
-        type: 'minus' | 'flat' | 'crown'; // 마이너스/평몰딩/갈매기
+    ceiling?: {
+        type: 'flat' | 'mold' | 'exposed'; 
+        method: 'replace_all' | 'overlay' | 'paint_only'; 
+        indirectLight: boolean; 
+        isTwoPly: boolean; 
     };
 
-    // NEW: Entry Door Details
+    wallConfig?: {
+        structural: 'existing' | 'new_stud' | 'bad_condition'; 
+        layers: '1ply' | '2ply'; 
+        finishType: 'wallpaper' | 'paint' | 'film'; 
+        baseboard: 'standard' | 'minus_hidden' | 'paint_skirting' | 'none'; 
+        soundProofing: boolean; 
+        isAllPutty: boolean; 
+    };
+
+    molding?: {
+        type: 'minus' | 'flat' | 'crown'; 
+    };
+
     entryDoor?: {
         type: '3yeondong' | 'swing' | 'onesliding';
     };
 
-    // NEW: Insulation Details
+    expansionConfig?: {
+        floorHeating: boolean; 
+        insulationGrade: 'standard' | 'high_end'; 
+        turningDoor: boolean; 
+    };
+
     insulation?: {
-        area: string; // 단열 위치 직접 입력
+        area: string; 
     };
 
     paint: {
@@ -122,21 +144,20 @@ export interface DetailedScope {
     };
 
     film: {
-        doors: boolean; // 기본 문틀/샷시
-        doorsCount?: number; // 문틀/샷시 개수
-        builtIn: boolean; // 붙박이장
-        builtInCount?: number; // 붙박이장 개수
-        sink: boolean; // 싱크대
-        sinkSize?: number; // 싱크대 길이 (m)
-        entrance: boolean; // 현관문
-        walls?: string; // 벽체/특이사항
+        doors: boolean; 
+        doorsCount?: number; 
+        builtIn: boolean; 
+        builtInCount?: number; 
+        sink: boolean; 
+        sinkSize?: number; 
+        entrance: boolean; 
+        walls?: string; 
     };
 
-    // NEW: Administrative & Prep Work
     admin: {
-        permit: boolean; // 행위허가 (확장시 필수)
-        consent: boolean; // 입주민 동의서
-        protection: boolean; // 엘리베이터 보양
+        permit: boolean; 
+        consent: boolean; 
+        protection: boolean; 
     };
 }
 
@@ -162,18 +183,19 @@ export interface ProjectScopeFlags {
 }
 
 export interface ProjectDetails {
-  area: number; // Always converted to Pyung internally
-  address?: string; // Construction Address
+  area: number; 
+  address?: string; 
   requests: string;
   targetDate?: string;
-  moveInDate?: string; // Expected Move-in Date
-  budget?: number; // User defined budget (Unit: 10,000 KRW)
+  moveInDate?: string; 
+  budget?: number; 
   image: {
-    data: string; // base64
+    data: string; 
     mimeType: string;
   };
   roomCount?: number;
   bathroomCount?: number;
+  floor?: number; 
   
   alreadyExpandedAreas?: string[];
   needsExpansionAreas?: string[];
@@ -231,6 +253,36 @@ export interface MaterialDetailItem {
   alternatives: string;
   remarks: string;
   qr: string;
+}
+
+// NEW: Advanced Material DB Schema
+export interface MaterialDatabaseItem {
+    id: string;
+    category: string; 
+    subCategory: string; // e.g. '도기/양변기', '수전/세면'
+    grade: 'budget' | 'standard' | 'high_end'; // 등급
+    brand?: string; 
+    name: string; 
+    modelCode?: string; // 모델명
+    spec: string; // 규격
+    finish?: string; // 마감/컬러 (e.g. 무광니켈)
+    installType?: string; // 설치방식 (e.g. 벽걸이, 원홀)
+    unit: string; 
+    price: number; 
+    link?: string; 
+    image?: string; 
+    laborRef?: string; // 연결된 기본 인건비 (deprecated in favor of workLink)
+    
+    // NEW: Smart Logic Links
+    workLink?: {
+        laborType: string; // e.g. '설비공', '타일러'
+        autoAddMaterials?: string[]; // 함께 추가되어야 할 부자재 ID 목록
+        complexityFactor?: number; // 시공 난이도 할증 (1.0 = standard)
+    };
+    
+    searchKeywords?: string[]; // 검색 키워드
+    description?: string;
+    lastUpdated: string;
 }
 
 export interface PromptSet {
@@ -353,7 +405,6 @@ export interface SchedulePhase {
   endDate: string;
 }
 
-// NEW: Budget Analysis Interface
 export interface BudgetAnalysis {
     isOverBudget: boolean;
     statusMessage: string;
@@ -367,10 +418,7 @@ export interface GeneratedPlan {
     keywords: string[];
   };
   costEstimate: EstimateItem[];
-  
-  // NEW: Budget Analysis Result
   budgetAnalysis?: BudgetAnalysis;
-
   materialDetailSheet?: MaterialDetailItem[];
   materialBoardPrompts?: PromptSet;
   projectPackage?: ProjectPackage;
@@ -408,7 +456,6 @@ export interface PersonaScenario {
     keyFeatures: string[];
 }
 
-// NEW: Price Update Suggestion for Admin
 export interface PriceSuggestion {
     id: string;
     type: 'UPDATE' | 'NEW';
@@ -429,4 +476,26 @@ export interface UnitPrice {
   priceStandard: number;
   priceHigh: number;
   description: string;
+}
+
+export interface VerifiedContractor {
+    id: string;
+    name: string; 
+    type: string; 
+    region: string; 
+    contact: string; 
+    snsLink?: string; 
+    platform?: 'youtube' | 'instagram' | 'blog' | 'website' | 'other' | 'offline';
+    description: string; 
+    isVerified: boolean; 
+    tags: string[];
+    career?: string; 
+    verificationNote?: string; 
+}
+
+export interface LaborSuggestion {
+    key: string;
+    currentPrice: number;
+    suggestedPrice: number;
+    reason: string;
 }
