@@ -28,20 +28,30 @@ const LABOR_LABEL_MAP: Record<string, string> = {
     flooring: '🪵 바닥(마루) 시공자'
 };
 
-// UI Tabs (Display Name)
-const CATEGORY_TABS = ['전체', '공통', '철거', '목공', '전기', '설비', '욕실', '바닥', '벽', '도어', '주방/가구', '기타'];
+// UI Tabs (Display Name) - Added 5 new tabs: 천장, 타일, 페인트, 필름, 샤시
+const CATEGORY_TABS = [
+    '전체', '공통', '철거', '목공', '천장', 
+    '전기', '설비', '욕실', '타일', 
+    '바닥', '벽', '페인트', '필름', 
+    '샤시', '도어', '주방/가구', '기타'
+];
 
-// Mapping Logic: Tab Name -> Actual DB Category Keywords
+// Mapping Logic: Tab Name -> Actual DB Category/SubCategory Keywords
 const CATEGORY_MAPPING: Record<string, string[]> = {
     '전체': [],
     '공통': ['공통', '가설', '양중', '보양'],
     '철거': ['철거'],
-    '목공': ['목공', '단열', '가벽', '천장'],
+    '목공': ['목공', '단열', '가벽', '목자재'],
+    '천장': ['천장', '몰딩', '덴조'], // NEW
     '전기': ['전기', '조명', '배선'],
     '설비': ['설비', '방수', '배관', '환기'],
-    '욕실': ['욕실', '도기', '수전', '타일'], // 타일공사도 욕실에서 봄
-    '바닥': ['바닥', '바닥마감', '마루', '장판', '데코타일'],
-    '벽': ['벽', '벽마감', '도배', '도장', '필름', '탄성'],
+    '욕실': ['욕실', '도기', '수전', '악세사리'],
+    '타일': ['타일'], // NEW
+    '바닥': ['바닥', '마루', '장판', '데코타일'],
+    '벽': ['벽', '도배'], 
+    '페인트': ['페인트', '도장', '탄성'], // NEW
+    '필름': ['필름', '시트', '인테리어 필름'], // NEW
+    '샤시': ['샤시', '샷시', '창호', '유리'], // NEW
     '도어': ['도어', '문', '중문', '방문'],
     '주방/가구': ['주방', '가구', '싱크대', '붙박이', '신발장'],
     '기타': ['기타', '부자재', '잡자재']
@@ -605,8 +615,12 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onClose, initialAddress 
       : materials.filter(m => {
           const keywords = CATEGORY_MAPPING[activeMaterialCategory];
           if (!keywords) return m.category === activeMaterialCategory;
-          // Check if item's category CONTAINS any of the keywords or Matches exactly
-          return keywords.some(k => m.category.includes(k) || m.category === k);
+          // Check if item's category OR subCategory CONTAINS any of the keywords or Matches exactly
+          return keywords.some(k => 
+              m.category.includes(k) || 
+              m.category === k ||
+              (m.subCategory && m.subCategory.includes(k))
+          );
       });
 
   // Calculate scan categories based on Tabs
