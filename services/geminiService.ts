@@ -35,6 +35,7 @@ const cleanAndParseJSON = (text: string | undefined): any => {
     }
 };
 
+// ... (Rest of the imports and helper functions remain similar) ...
 const getRecentMarketPeriod = (): string => {
     const now = new Date();
     const past = new Date(now.setMonth(now.getMonth() - 1)); // 1달 전 데이터까지
@@ -43,7 +44,6 @@ const getRecentMarketPeriod = (): string => {
     return `${year}년 ${month}월`;
 };
 
-// ... (Other functions: validateApiKey, createVirtualPlanFromDimensions, analyzeFloorplan, generateVisualizations, modifyImageStyle, generateProjectPlan, generateMaterialDetails, generateProjectSchedule, generateMasterTemplate, generateProjectPackage, analyzeMarketPrices, analyzeLaborCosts remain unchanged) ...
 export const validateApiKey = async (apiKey: string): Promise<boolean> => {
   try {
     const testAi = new GoogleGenAI({ apiKey: apiKey || process.env.API_KEY });
@@ -267,6 +267,20 @@ export const generateProjectPlan = async (
         - Wall Configuration: ${JSON.stringify(detailedScope.wallConfig)}
         `;
     }
+    
+    // NEW: Bathroom Specific Context
+    if (details.projectScope === 'bathroom' && details.bathroomSpecifics) {
+        scopeContext += `
+        *** BATHROOM SPECIFIC DETAILS (CRITICAL) ***
+        - Demolition: ${details.bathroomSpecifics.demolitionType} (Full waterproof implies 2-3 coat waterproofing)
+        - Tile Size: ${details.bathroomSpecifics.tileSelection} (600x600 or larger = High labor cost, 600x1200 = Specialized labor)
+        - Gendai Finish: ${details.bathroomSpecifics.gendaiFinish} (Jolly Cut = Miter saw labor, Art Marble = Material cost)
+        - Wet Zone: ${details.bathroomSpecifics.wetZoneMethod}
+        - Ceiling: ${details.bathroomSpecifics.ceilingType}
+        - Fixtures: Toilet(${details.bathroomSpecifics.toiletType}), Basin(${details.bathroomSpecifics.washbasinType}), Faucet(${details.bathroomSpecifics.faucetGrade})
+        - Add-ons: Ventilation(${details.bathroomSpecifics.ventilation}), Heating(${details.bathroomSpecifics.floorHeating ? 'YES' : 'NO'}), Elec(${JSON.stringify(details.bathroomSpecifics.electricalOptions)})
+        `;
+    }
 
     const schema: Schema = {
         type: Type.OBJECT,
@@ -364,6 +378,15 @@ export const generateProjectPlan = async (
              - Material: Add "High-Performance Tile Adhesive (Ardex X18 or equivalent)".
              - Labor: Increase Tiler Labor by 1.5x (Large format difficulty + 2-person handling).
              - Add "Tile Leveling Clips (평탄클립)" as a subsidiary material.
+        
+        [Rule 6: Bathroom Specifics - Jolly Cut & Fixtures]
+        IF bathroomSpecifics.gendaiFinish == 'jolly_cut':
+           - Add "Jolly Cut Processing Labor" (졸리컷 가공비) to the Tile Labor section.
+           - Note: This is highly skilled labor.
+        IF bathroomSpecifics.ventilation == 'high_end_damper':
+           - Select "Himfel Zeroc" or equivalent high-end fan.
+        IF bathroomSpecifics.floorHeating == true:
+           - Add "Floor Heating Extension" (난방 배관 연장) to Plumbing/Facilities.
 
         GENERAL RULES:
         1. **NO SUMMARIZATION**: Do NOT output "Bathroom Remodeling 1 EA". Break it down.
@@ -380,17 +403,30 @@ export const generateProjectPlan = async (
     });
 
     const result = cleanAndParseJSON(response.text);
-    return {
-        ...result,
+    
+    // Explicitly sanitize critical fields to prevent UI crashes if AI omits them
+    const sanitizedPlan: GeneratedPlan = {
+        designConcept: result.designConcept || { title: "견적 분석 결과", description: "AI가 생성한 견적입니다.", keywords: [] },
+        costEstimate: Array.isArray(result.costEstimate) ? result.costEstimate : [],
+        budgetAnalysis: result.budgetAnalysis ? {
+            isOverBudget: !!result.budgetAnalysis.isOverBudget,
+            statusMessage: result.budgetAnalysis.statusMessage || "",
+            costSavingTips: Array.isArray(result.budgetAnalysis.costSavingTips) ? result.budgetAnalysis.costSavingTips : []
+        } : undefined,
+        confidence: result.confidence || 'MEDIUM',
+        confidenceReason: result.confidenceReason || '',
+        correctionNeeded: result.correctionNeeded || '',
         projectSchedule: [],
         materialDetailSheet: [],
         materialBoardPrompts: undefined,
         masterTemplate: undefined,
         projectPackage: undefined
-    } as GeneratedPlan;
+    };
+
+    return sanitizedPlan;
 };
 
-// ... (Other functions: generateMaterialDetails, generateProjectSchedule, generateMasterTemplate, generateProjectPackage, analyzeMarketPrices, analyzeLaborCosts) ...
+// ... (Rest of the file remains same: generateMaterialDetails, generateProjectSchedule, generateMasterTemplate, generateProjectPackage, analyzeMarketPrices, analyzeLaborCosts, discoverAndRefreshMaterials) ...
 export const generateMaterialDetails = async (details: ProjectDetails): Promise<{sheet: MaterialDetailItem[], prompts: PromptSet}> => {
     if (details.isDemo) {
         return { 
@@ -464,11 +500,17 @@ export const generateMaterialDetails = async (details: ProjectDetails): Promise<
            - If a match is found, use the 'brand', 'name', 'price', and 'link' from the database.
            - If no exact match, you may suggest a market standard item.
            
-        2. **QUANTITY**: You MUST generate **at least 30 distinct items**. 
+        2. **SHOPPING LINKS (STRICT)**: 
+           - **DO NOT GENERATE FAKE URLs**. 
+           - **ONLY** return the 'link' from the DATABASE if it exists.
+           - If the item is NOT in the database, LEAVE THE LINK FIELD EMPTY ("").
+           - The frontend will automatically generate search links for empty fields.
+           
+        3. **QUANTITY**: You MUST generate **at least 30 distinct items**. 
            - Do not group items. 
            - Include "Subsidiary Materials" (부자재) like adhesive, grout, silicon from the database.
            
-        3. **SPECIFICITY**:
+        4. **SPECIFICITY**:
            - If Flooring is 'Maru', list "Maru Box", "Maru Glue (Hwangto)", "Skirting Board (Geol-le-baji)".
            - If Bathroom/Tile is high-end, you MUST list "Ardex FG4 Grout" and "Ardex Silicone".
            

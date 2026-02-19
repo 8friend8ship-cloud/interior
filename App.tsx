@@ -110,8 +110,9 @@ const App: React.FC = () => {
   const handleFinalizeLogic = async (details: ProjectDetails) => {
       setAppState(AppState.FINALIZING);
       try {
+        // 타임아웃을 60초에서 120초로 연장
         const timeoutPromise = new Promise((_, reject) => 
-            setTimeout(() => reject(new Error("AI 응답 시간이 초과되었습니다. 다시 시도해주세요.")), 60000)
+            setTimeout(() => reject(new Error("AI 연산량이 많아 응답 시간이 초과되었습니다. 다시 시도해주세요.")), 120000)
         );
 
         const logicPromise = generateProjectPlan(details, undefined, false);
@@ -283,7 +284,7 @@ const App: React.FC = () => {
         return (
            <AdSenseLoadingOverlay 
             message="최종 상세 견적 산출 중..."
-            subMessage="AI가 각 공정별 물량을 계산하고 시장 단가를 대입하여 견적서를 작성하고 있습니다. (약 15초 소요)"
+            subMessage="AI가 각 공정별 물량을 계산하고 시장 단가를 대입하여 견적서를 작성하고 있습니다. (약 30~60초 소요)"
           />
         );
 

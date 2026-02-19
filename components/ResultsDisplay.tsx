@@ -34,15 +34,23 @@ export const ResultsDisplay: React.FC<ResultsDisplayProps> = ({
   useEffect(() => {
       if (details.address) {
           const allContractors = getStoredContractors();
-          // Simple region matching logic (contains)
-          const regionKey = details.address.split(' ')[0] || ''; // e.g., "서울시" -> "서울"
+          const regionKey = details.address.split(' ')[0] || ''; 
           const matches = allContractors.filter(c => c.region.includes(regionKey) || c.region === '전국' || regionKey.includes(c.region));
           setMatchedContractors(matches);
       }
   }, [details.address]);
 
-  const formatCurrency = (amount: number) => {
+  const formatCurrency = (amount: number | undefined | null) => {
+    if (amount === undefined || amount === null || isNaN(amount)) {
+        return '-';
+    }
     return new Intl.NumberFormat('ko-KR', { style: 'currency', currency: 'KRW' }).format(amount);
+  };
+
+  // Safe formatting for Material Prices specifically
+  const formatMaterialPrice = (price: number | undefined | null) => {
+      if (!price || isNaN(price) || price === 0) return "가격 변동 (시세)";
+      return new Intl.NumberFormat('ko-KR', { style: 'currency', currency: 'KRW' }).format(price);
   };
 
   const renderTabContent = () => {
@@ -69,7 +77,7 @@ export const ResultsDisplay: React.FC<ResultsDisplayProps> = ({
                                         </tr>
                                     </thead>
                                     <tbody className="bg-white divide-y divide-gray-200">
-                                        {plan.costEstimate.map((item, idx) => (
+                                        {plan.costEstimate?.map((item, idx) => (
                                             <tr key={idx} className="hover:bg-gray-50 transition-colors">
                                                 <td className="px-4 md:px-6 py-3 text-sm font-bold text-gray-900 whitespace-nowrap">{item.category}</td>
                                                 <td className="px-4 md:px-6 py-3 text-sm text-gray-700">
@@ -81,13 +89,15 @@ export const ResultsDisplay: React.FC<ResultsDisplayProps> = ({
                                                 <td className="px-4 md:px-6 py-3 text-sm font-bold text-indigo-700 text-right whitespace-nowrap">{formatCurrency(item.totalPrice)}</td>
                                                 <td className="hidden md:table-cell px-6 py-3 text-xs text-gray-400">{item.remarks}</td>
                                             </tr>
-                                        ))}
+                                        )) || (
+                                            <tr><td colSpan={6} className="text-center py-4 text-gray-500">견적 내역이 없습니다.</td></tr>
+                                        )}
                                     </tbody>
                                     <tfoot className="bg-gray-900 text-white">
                                         <tr>
                                             <td colSpan={2} className="px-6 py-4 text-right font-medium text-gray-300">총 견적 합계 (VAT 별도)</td>
                                             <td colSpan={4} className="px-6 py-4 text-right text-xl font-bold text-yellow-400">
-                                                {formatCurrency(plan.costEstimate.reduce((sum, item) => sum + item.totalPrice, 0))}
+                                                {formatCurrency(plan.costEstimate?.reduce((sum, item) => sum + item.totalPrice, 0) || 0)}
                                             </td>
                                         </tr>
                                     </tfoot>
@@ -104,7 +114,7 @@ export const ResultsDisplay: React.FC<ResultsDisplayProps> = ({
                                             {plan.budgetAnalysis.isOverBudget ? '예산 초과 주의' : '예산 내 진행 가능'}
                                         </h4>
                                         <p className="text-gray-700 mb-3 font-medium">{plan.budgetAnalysis.statusMessage}</p>
-                                        {plan.budgetAnalysis.costSavingTips.length > 0 && (
+                                        {plan.budgetAnalysis.costSavingTips && plan.budgetAnalysis.costSavingTips.length > 0 && (
                                             <div className="bg-white bg-opacity-60 p-4 rounded-lg">
                                                 <strong className="text-sm font-bold text-gray-800 block mb-2">💡 전문가의 비용 절감 제안:</strong>
                                                 <ul className="list-disc pl-5 space-y-1 text-sm text-gray-700">
@@ -144,26 +154,58 @@ export const ResultsDisplay: React.FC<ResultsDisplayProps> = ({
               }
               return (
                 <div className="animate-fade-in pt-4">
+                    <div className="flex justify-between items-center mb-4 px-1">
+                        <h2 className="text-xl font-bold text-gray-900">🧱 자재 & 쇼핑 리스트</h2>
+                        <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">※ 예산은 시장 상황에 따라 변동될 수 있습니다.</span>
+                    </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {plan.materialDetailSheet.map((mat, idx) => (
-                            <div key={idx} className="group border border-gray-200 rounded-xl p-5 bg-white shadow-sm hover:shadow-xl transition-all flex flex-col h-full relative overflow-hidden">
-                                <div className="flex-grow">
-                                    <div className="flex justify-between items-start mb-3">
-                                        <span className="text-xs font-extrabold bg-gray-900 text-white px-2 py-1 rounded uppercase">{mat.category}</span>
-                                        <span className="text-xs font-bold text-indigo-600 bg-indigo-50 px-2 py-1 rounded">{mat.quantity}</span>
+                        {plan.materialDetailSheet.map((mat, idx) => {
+                            // 1. Dynamic Search Query Construction (The Fix)
+                            // AI's direct link is often broken. We construct a search query instead.
+                            const searchQuery = encodeURIComponent(`${mat.item} ${mat.model || ''} ${mat.spec || ''}`.trim());
+                            const coupangUrl = `https://www.coupang.com/np/search?component=&q=${searchQuery}`;
+                            const naverUrl = `https://search.shopping.naver.com/search/all?query=${searchQuery}`;
+
+                            return (
+                                <div key={idx} className="group border border-gray-200 rounded-xl p-0 bg-white shadow-sm hover:shadow-xl transition-all flex flex-col h-full overflow-hidden">
+                                    {/* Header: Category & Qty */}
+                                    <div className="p-5 pb-3">
+                                        <div className="flex justify-between items-start mb-2">
+                                            <span className="text-[10px] font-extrabold bg-gray-800 text-white px-2 py-1 rounded uppercase tracking-wide">{mat.category}</span>
+                                            <span className="text-[10px] font-bold text-indigo-600 bg-indigo-50 px-2 py-1 rounded border border-indigo-100">수량: {mat.quantity}</span>
+                                        </div>
+                                        <h4 className="font-bold text-gray-900 text-lg leading-tight mb-1">{mat.item}</h4>
+                                        <p className="text-xs font-medium text-gray-500 truncate">{mat.model}</p>
                                     </div>
-                                    <h4 className="font-bold text-gray-900 text-xl mb-1">{mat.item}</h4>
-                                    <p className="text-sm font-semibold text-gray-600 mb-4">{mat.model}</p>
-                                    <div className="text-sm text-gray-600 bg-gray-50 p-4 rounded-lg mb-4 space-y-2 border border-gray-100">
-                                        <div className="flex justify-between border-b pb-2"><span className="text-xs text-gray-400">규격</span><span className="font-bold">{mat.spec}</span></div>
-                                        <div className="flex justify-between pt-1"><span className="text-xs text-gray-400">예산</span><span className="font-bold text-indigo-700">{formatCurrency(mat.price)}</span></div>
+
+                                    {/* Body: Specs & Budget */}
+                                    <div className="px-5 pb-4 flex-grow">
+                                        <div className="bg-gray-50 rounded-lg p-3 space-y-2 border border-gray-100">
+                                            <div className="flex justify-between items-center text-xs">
+                                                <span className="text-gray-400 font-medium">규격/컬러</span>
+                                                <span className="text-gray-700 font-bold text-right truncate max-w-[120px]">{mat.spec} {mat.color ? `/ ${mat.color}` : ''}</span>
+                                            </div>
+                                            <div className="border-t border-gray-200 pt-2 flex justify-between items-center">
+                                                <span className="text-gray-400 font-medium text-xs">예상 예산</span>
+                                                <span className={`font-bold ${!mat.total ? 'text-gray-400 text-xs' : 'text-indigo-700 text-sm'}`}>
+                                                    {formatMaterialPrice(mat.total)}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Footer: Robust Shopping Buttons (Replaces AI Link) */}
+                                    <div className="p-3 bg-gray-50 border-t border-gray-100 mt-auto grid grid-cols-2 gap-2">
+                                        <a href={coupangUrl} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center py-2.5 bg-red-500 text-white rounded-lg hover:bg-red-600 font-bold text-xs shadow-sm transition-all hover:-translate-y-0.5">
+                                            <span className="mr-1">🚀</span> 쿠팡 검색
+                                        </a>
+                                        <a href={naverUrl} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center py-2.5 bg-green-500 text-white rounded-lg hover:bg-green-600 font-bold text-xs shadow-sm transition-all hover:-translate-y-0.5">
+                                            <span className="mr-1">N</span> 최저가 비교
+                                        </a>
                                     </div>
                                 </div>
-                                <div className="mt-auto pt-4 border-t border-gray-100">
-                                    {mat.link && <a href={mat.link} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center w-full py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-bold text-sm shadow-md"><span>👉 최저가 구매 링크</span></a>}
-                                </div>
-                            </div>
-                        ))}
+                            );
+                        })}
                     </div>
                 </div>
               );
@@ -229,8 +271,12 @@ export const ResultsDisplay: React.FC<ResultsDisplayProps> = ({
         <div className="max-w-7xl mx-auto">
             <div className="py-3 flex flex-row justify-between items-center gap-4">
                 <div className="min-w-0">
-                    <h1 className="text-lg md:text-xl font-extrabold text-gray-900 truncate">{plan.designConcept.title}</h1>
-                    <p className="text-xs text-gray-500 truncate hidden md:block">{plan.designConcept.description}</p>
+                    <h1 className="text-lg md:text-xl font-extrabold text-gray-900 truncate">
+                        {plan.designConcept?.title || "AI 견적 분석 결과"}
+                    </h1>
+                    <p className="text-xs text-gray-500 truncate hidden md:block">
+                        {plan.designConcept?.description || "분석된 견적 및 공정 데이터를 확인하세요."}
+                    </p>
                 </div>
                 <button onClick={onReset} className="text-xs md:text-sm text-gray-500 hover:text-red-600 font-bold underline decoration-2 decoration-red-200 underline-offset-4 whitespace-nowrap flex-shrink-0">
                     ↺ 처음으로
@@ -255,7 +301,7 @@ export const ResultsDisplay: React.FC<ResultsDisplayProps> = ({
           {renderTabContent()}
       </div>
 
-      {/* 3. Verified Expert Finder (Updated) */}
+      {/* 3. Verified Expert Finder */}
       {details.address && (
         <section className="bg-gradient-to-br from-indigo-50 to-blue-50 p-8 rounded-2xl border border-indigo-100 shadow-sm mt-8 mx-1">
             <h4 className="font-bold text-indigo-900 mb-2 flex items-center gap-2 text-xl">
@@ -272,103 +318,33 @@ export const ResultsDisplay: React.FC<ResultsDisplayProps> = ({
                         <div key={contractor.id} className="bg-white p-5 rounded-xl border border-indigo-100 shadow-sm hover:shadow-md transition-all flex gap-4">
                              <div className={`w-14 h-14 rounded-full flex items-center justify-center text-2xl flex-shrink-0 ${contractor.platform === 'youtube' ? 'bg-red-50 text-red-500' : contractor.platform === 'instagram' ? 'bg-pink-50 text-pink-500' : 'bg-gray-100 text-gray-500'}`}>
                                 {contractor.platform === 'youtube' ? '▶️' : contractor.platform === 'instagram' ? '📸' : '👷'}
-                            </div>
-                            <div className="flex-grow">
-                                <div className="flex items-center gap-2 mb-1 flex-wrap">
-                                    <h5 className="font-bold text-gray-900">{contractor.name}</h5>
-                                    <span className="text-[10px] bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded font-bold">✅ 검증됨</span>
-                                    {contractor.career && <span className="text-[10px] bg-yellow-100 text-yellow-800 px-1.5 py-0.5 rounded font-bold">{contractor.career}</span>}
-                                </div>
-                                <p className="text-xs text-gray-500 mb-2">{contractor.description}</p>
-                                
-                                {contractor.verificationNote && (
-                                    <div className="text-xs bg-indigo-50 text-indigo-800 p-2 rounded mb-2 border-l-2 border-indigo-400">
-                                        <span className="font-bold">🛡️ 검증 노트:</span> {contractor.verificationNote}
-                                    </div>
-                                )}
-
-                                <div className="flex gap-2 text-xs items-center justify-between mt-3">
-                                    <div className="flex flex-col text-gray-500">
-                                        <span>📍 {contractor.region}</span>
-                                        <span className="font-bold text-gray-700">📞 {contractor.contact}</span>
-                                    </div>
-                                    {contractor.platform !== 'offline' && contractor.snsLink ? (
-                                        <a href={contractor.snsLink} target="_blank" className="bg-indigo-600 text-white px-3 py-1.5 rounded hover:bg-indigo-700 font-bold shadow-sm">
-                                            포트폴리오 보기
-                                        </a>
-                                    ) : (
-                                        <span className="bg-gray-100 text-gray-600 px-3 py-1.5 rounded font-bold border border-gray-200">
-                                            현장 문의 권장
-                                        </span>
-                                    )}
-                                </div>
-                            </div>
+                             </div>
+                             <div>
+                                 <div className="flex items-center gap-2 flex-wrap">
+                                     <h5 className="font-bold text-gray-900 text-lg">{contractor.name}</h5>
+                                     <span className="text-xs bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded border border-indigo-100">{contractor.type}</span>
+                                 </div>
+                                 <p className="text-sm text-gray-600 mt-1 line-clamp-2">{contractor.description}</p>
+                                 <div className="mt-3 flex items-center gap-3 text-xs text-gray-500">
+                                     {contractor.career && <span className="bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded font-bold">경력 {contractor.career}</span>}
+                                     {contractor.platform !== 'offline' && contractor.snsLink ? (
+                                         <a href={contractor.snsLink} target="_blank" rel="noopener noreferrer" className="text-indigo-600 hover:underline flex items-center gap-1">
+                                             채널 방문 &rarr;
+                                         </a>
+                                     ) : (
+                                         <span className="text-gray-400">오프라인 현장팀</span>
+                                     )}
+                                 </div>
+                             </div>
                         </div>
                     ))}
                 </div>
             ) : (
-                <div className="bg-white/50 p-6 rounded-xl border border-dashed border-indigo-200 text-center mb-8">
-                    <p className="text-sm text-indigo-400">
-                        현재 이 지역에 등록된 '검증 시공자'가 없습니다.<br/>
-                        아래 지도 검색을 통해 직접 찾아보세요.
-                    </p>
+                <div className="bg-white p-8 rounded-xl border border-dashed border-indigo-200 text-center text-gray-500 mb-8">
+                    <p className="mb-2">아직 해당 지역에 등록된 검증된 전문가가 없습니다.</p>
+                    <p className="text-xs">관리자가 지속적으로 숨은 고수를 발굴하고 있습니다.</p>
                 </div>
             )}
-            
-            {/* B. Fallback Map Search & SNS Links (RESTORED) */}
-            <div className="border-t border-indigo-200 pt-6">
-                <div className="mb-4">
-                     <p className="text-xs font-bold text-indigo-800 mb-3 uppercase tracking-wide">SNS 시공 사례 검색 (직접 찾기)</p>
-                     <div className="grid grid-cols-3 gap-2">
-                        <a 
-                            href={`https://www.youtube.com/results?search_query=${encodeURIComponent(details.address + ' 인테리어')}`}
-                            target="_blank" 
-                            rel="noopener noreferrer"
-                            className="flex items-center justify-center gap-1.5 py-2.5 bg-red-600 text-white rounded-lg text-xs font-bold hover:bg-red-700 transition-all shadow-sm"
-                        >
-                            <span className="text-lg">▶️</span> YouTube
-                        </a>
-                        <a 
-                            href={`https://www.instagram.com/explore/tags/${encodeURIComponent(details.address.split(' ')[1] || '인테리어')}/`} // Gu-level tag
-                            target="_blank" 
-                            rel="noopener noreferrer"
-                            className="flex items-center justify-center gap-1.5 py-2.5 bg-gradient-to-r from-purple-500 via-pink-500 to-orange-500 text-white rounded-lg text-xs font-bold hover:opacity-90 transition-all shadow-sm"
-                        >
-                            <span className="text-lg">📸</span> Instagram
-                        </a>
-                         <a 
-                            href={`https://www.tiktok.com/search?q=${encodeURIComponent(details.address + ' 인테리어')}`}
-                            target="_blank" 
-                            rel="noopener noreferrer"
-                            className="flex items-center justify-center gap-1.5 py-2.5 bg-black text-white rounded-lg text-xs font-bold hover:bg-gray-800 transition-all shadow-sm"
-                        >
-                            <span className="text-lg">🎵</span> TikTok
-                        </a>
-                     </div>
-                </div>
-
-                <p className="text-xs font-bold text-indigo-800 mb-3 uppercase tracking-wide mt-6">일반 지도 검색 (보조 수단)</p>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <a 
-                        href={`https://www.google.com/maps/search/${encodeURIComponent(details.address + ' 인테리어 디자인')}`}
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        className="flex items-center justify-center gap-2 py-3 bg-white border border-gray-200 text-gray-700 rounded-xl text-sm font-bold hover:border-indigo-500 hover:text-indigo-600 transition-all"
-                    >
-                        <img src="https://www.google.com/images/branding/product/ico/maps15_bnuw3a_32dp.png" alt="Google" className="w-5 h-5"/>
-                        Google 지도 검색
-                    </a>
-                    <a 
-                        href={`https://search.naver.com/search.naver?query=${encodeURIComponent(details.address + ' 인테리어 잘하는 곳')}`}
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        className="flex items-center justify-center gap-2 py-3 bg-[#03C75A] text-white rounded-xl text-sm font-bold hover:bg-[#02b351] transition-all"
-                    >
-                        <span className="font-black">N</span>
-                        네이버 플레이스 업체 검색
-                    </a>
-                </div>
-            </div>
         </section>
       )}
     </div>

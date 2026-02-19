@@ -55,21 +55,44 @@ export interface VirtualPlan {
   totalWallLength: number;
 }
 
+// Detailed Bathroom Specifications (Enhanced)
 export interface BathroomSpecifics {
-  type: 'overlay' | 'demolition'; 
-  tileGrade: 'standard' | 'high_end'; 
-  ceilingType: 'smc' | 'barrisol' | 'paint'; 
-  isJollyCut: boolean; 
-  wetZoneMethod: 'bathtub' | 'partition' | 'booth' | 'tile_wall' | 'none'; 
-  vanityCount: number; 
-  cabinetType?: 'sliding' | 'standard' | 'flap'; 
-  hasGendai: boolean;
-  replaceDoor?: boolean;
-  removeRadiator?: boolean;
+  // 1. 철거 및 기초
+  demolitionType: 'full_waterproof' | 'partial_overlay' | 'basic_removal'; // 올철거(방수포함) | 덧방(기구철거) | 기본철거
+  waterproofing: 'standard_2coat' | 'premium_3coat' | 'none'; // 2차도막 | 3차+부직포 | 덧방시없음
+
+  // 2. 타일 및 마감
+  tileSelection: '300_600' | '600_600' | '800_800' | '600_1200' | 'mosaic' | '300_300_floor';
+  gendaiFinish: 'jolly_cut' | 'art_marble' | 'nat_marble' | 'tile_finish' | 'none'; // 졸리컷 | 인조대리석 | 천연대리석 | 타일마감
+  
+  // 3. 도기 및 수전
+  toiletType: 'two_piece' | 'one_piece' | 'wall_hung' | 'smart_bidet'; // 투피스 | 원피스 | 벽걸이 | 비데일체
+  washbasinType: 'half_pedestal' | 'full_pedestal' | 'top_counter' | 'under_counter'; // 반다리 | 긴다리 | 탑볼 | 언더
+  faucetGrade: 'standard_chrome' | 'matte_sus' | 'color_coated' | 'luxury_brand'; // 크롬 | 무광니켈 | 컬러도장 | 수입
+
+  // 4. 구조 및 가구
+  wetZoneMethod: 'bathtub' | 'partition_glass' | 'partition_tile' | 'booth' | 'none';
+  cabinetType: 'sliding_mirror' | 'flap_jang' | 'mirror_standard' | 'custom_wood'; // 슬라이딩장 | 플랩장 | 거울+수납 | 하부장제작
+  ceilingType: 'smc_flat' | 'smc_dome' | 'paint_special' | 'barrisol'; // SMC평 | SMC돔 | 도장 | 바리솔
+
+  // 5. 설비 및 기타 옵션 (Expert Additions)
+  ventilation: 'basic_fan' | 'high_end_damper'; // 일반 | 힘펠(댐퍼/온풍)
+  drainType: 'standard_yuga' | 'tile_yuga' | 'line_trench'; // 일반유가 | 도기질유가 | 트렌치
+  floorHeating: boolean; // 난방 배관 연장 여부
+  
+  // Dimensions & Logic
   width?: number; 
   depth?: number; 
   height?: number; 
-  useDimensionsOnly?: boolean; 
+  useDimensionsOnly?: boolean;
+  
+  // Electrical (Existing)
+  needsElectricalWork?: boolean;
+  electricalOptions?: {
+      moveOutlet: boolean;
+      indirectLight: boolean;
+      fanConnection: boolean;
+  };
 }
 
 // Detailed Scope Flags
@@ -185,6 +208,7 @@ export interface ProjectScopeFlags {
 export interface ProjectDetails {
   area: number; 
   address?: string; 
+  buildingType?: 'apartment' | 'villa' | 'house'; 
   requests: string;
   targetDate?: string;
   moveInDate?: string; 
@@ -255,32 +279,30 @@ export interface MaterialDetailItem {
   qr: string;
 }
 
-// NEW: Advanced Material DB Schema
 export interface MaterialDatabaseItem {
     id: string;
     category: string; 
-    subCategory: string; // e.g. '도기/양변기', '수전/세면'
-    grade: 'budget' | 'standard' | 'high_end'; // 등급
+    subCategory: string; 
+    grade: 'budget' | 'standard' | 'high_end'; 
     brand?: string; 
     name: string; 
-    modelCode?: string; // 모델명
-    spec: string; // 규격
-    finish?: string; // 마감/컬러 (e.g. 무광니켈)
-    installType?: string; // 설치방식 (e.g. 벽걸이, 원홀)
+    modelCode?: string; 
+    spec: string; 
+    finish?: string; 
+    installType?: string; 
     unit: string; 
     price: number; 
     link?: string; 
     image?: string; 
-    laborRef?: string; // 연결된 기본 인건비 (deprecated in favor of workLink)
+    laborRef?: string; 
     
-    // NEW: Smart Logic Links
     workLink?: {
-        laborType: string; // e.g. '설비공', '타일러'
-        autoAddMaterials?: string[]; // 함께 추가되어야 할 부자재 ID 목록
-        complexityFactor?: number; // 시공 난이도 할증 (1.0 = standard)
+        laborType: string; 
+        autoAddMaterials?: string[]; 
+        complexityFactor?: number; 
     };
     
-    searchKeywords?: string[]; // 검색 키워드
+    searchKeywords?: string[]; 
     description?: string;
     lastUpdated: string;
 }

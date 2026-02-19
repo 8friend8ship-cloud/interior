@@ -41,35 +41,34 @@ export const saveLaborData = (laborData: typeof LABOR_DATA) => {
 };
 
 // --- References ---
-const DEFAULT_REFERENCES = `[존슨 지침: 인테리어 표준 시공 가이드라인 (Ver 2.0)]
+// Updated to reflect the user's detailed feedback regarding Bathroom, Lifting, Waste, and Door labor.
+const DEFAULT_REFERENCES = `[존슨 지침: 인테리어 표준 시공 가이드라인 v2.1]
 
-1. 철거 및 설비 공사
-- 욕실 철거: 덧방 시공을 지양하고, 바닥 방수층까지 완전히 걷어내는 '완전 철거'를 원칙으로 한다. (누수 하자 방지)
-- 방수: 철거 후 1차 액체 방수(모르타르+방수액) + 2차 도막 방수(고뫄스/아쿠아디펜스)를 필수 시행한다.
-- 확장부: 날개벽 철거 시 관리실 도면 확인 및 비내력벽 여부를 필히 확인한다. 확장부는 바닥 엑셀 연장 및 미장 작업을 포함한다.
+1. 양중 및 보양 (아파트 vs 비아파트 구분)
+- 아파트: 사다리차 사용 불가 시 '엘리베이터 사용료(관리실 납부)'와 '승강기 보양비(건축자재)'로 대체하여 견적한다.
+- 빌라/단독: 창호/철거 공사 시 '사다리차 비용'을 기본으로 적용한다.
 
-2. 목공사 및 단열 (고급 시공 포함)
-- 문선: 투박한 몰딩을 제거하고 '9mm 문선' 또는 '무문선' 시공을 표준으로 견적한다.
-- 천장: 시스템 에어컨 설치 시 단내림 및 간접조명 박스 시공을 포함한다.
-- 고급시공(도장): 벽체 도장 마감 시 '석고 2ply' 취부 및 '올퍼티' 작업을 원칙으로 한다.
-- 몰딩: 마이너스 몰딩 시공 시 수평 레벨링 및 금속 프로파일 삽입을 견적에 포함한다.
-- 단열: 외벽 면은 '아이소핑크 1호' + '우레탄폼 충진' + '이음새 기밀 테이프' 시공을 준수한다. (단순 스티로폼 금지)
+2. 철거 및 폐기물 기준
+- 전체 철거: 1.5톤 트럭 (1차 분량) 기준으로 산정한다.
+- 욕실 올철거(단독): 1톤 이하 (0.5톤 반차) 비용으로 산정한다.
+- 욕실 덧방: 폐기물 양이 적으므로 기본 잡자재비에 포함하거나 소액 책정한다.
 
-3. 타일 공사
-- 욕실: 600각 포세린 타일 시공 시 '졸리컷(면치기)' 마감을 기본으로 하며, 타일 평탄 클립(Leveling System)을 반드시 사용한다.
-- 주방: 상부장 없는 주방의 경우 타일 마감 높이를 천장까지 올린다.
+3. 욕실 공사 표준 공정 (Smc/도기/전기)
+- 공정 순서: 철거/방수(1일) -> 타일 양생 -> 천장/세팅(1일).
+- 천장(SMC): '평천장'을 기본으로 하며, 별도 시공일이 아닌 '욕실 세팅일(기구 설치)'에 조명, 환풍기와 함께 일괄 시공한다.
+- 전기(욕실 단독 공사 시): 별도의 전기 기술자를 부르지 않는다.
+  * 단, 콘센트 신설/이설, 천장 배선 분리, 슬라이딩장 하부 간접조명 등 작업 필요 시 '전기 부분 시공비(약 2시간 작업 비용)'로 별도 책정한다.
 
-4. 전기 및 조명
-- 배선: 인덕션 단독 배선(4sq) 및 식기세척기 전용 콘센트 증설을 견적에 포함한다.
-- 조명: 주조명(방등) 외에 3인치/4인치 매립등(다운라이트) 타공 및 배선 작업을 기본으로 한다. 색온도는 주백색(4000K)을 권장한다.
+4. 목공 및 도어 (전문 시공)
+- 도어 단독 시공: 목수 일당(Day)으로 계산하지 않고, '도어 전문 설치비(짝당 단가)'로 계산하여 비용을 절감한다.
+- 전체 목공: 가벽, 단열 등 복합 공정일 경우에만 목수 인건비(품)를 적용한다.
 
-5. 도배 및 바닥
-- 도배: 실크 벽지 시공 시 기존 벽지 제거 후 '부직포 초배' 작업을 필수로 한다. (퍼티 작업 별도 표기)
-- 바닥: 강마루 시공 시 친환경 황토 본드 사용을 원칙으로 한다.
+5. 자재 선정 및 옵션 (타일/위생도기)
+- 타일: 300*600(벽)/300*300(바닥)을 기본으로 하되, 600각(졸리컷) 선택 시 자재비 상승 및 '부자재(아덱스 등)' 옵션을 필수 체크한다.
+- 위생도기: 기본형(투피스) vs 고급형(원피스/아메리칸스탠다드) 옵션을 구분하여 제안한다.
 
-6. 기타 마감
-- 탄성코트: 발코니는 곰팡이에 강한 바이오 세라믹 탄성코트를 적용한다.
-- 필름: 샷시 및 문틀 리폼 시 프라이머 도포 후 시공한다.
+6. 기타 필수 체크
+- 쇼핑 링크: 자재 리스트 제공 시 고객이 바로 구매 가능한 '쇼핑몰 검색 링크'를 반드시 제공해야 한다.
 `;
 
 export const getStoredReferenceGuidelines = (): string => {
@@ -94,9 +93,13 @@ const INITIAL_MATERIALS: MaterialDatabaseItem[] = [
     { id: 'COMMON_03', category: '공통', subCategory: '폐기물', grade: 'standard', name: '폐기물 마대(PP)', spec: '80kg용', unit: '장', price: 500, lastUpdated: '2024-02-01', workLink: { laborType: 'general' } },
     { id: 'COMMON_04', category: '공통', subCategory: '폐기물', grade: 'standard', name: '1톤 트럭 폐기물 처리비', spec: '혼합폐기물', unit: '대', price: 450000, lastUpdated: '2024-02-01', workLink: { laborType: 'general' } },
     { id: 'COMMON_05', category: '공통', subCategory: '양중', grade: 'standard', name: '사다리차 사용료 (1시간)', spec: '10층 이하', unit: '시간', price: 150000, lastUpdated: '2024-02-01', workLink: { laborType: 'general' } },
-
+    // NEW ITEMS requested by user
+    { id: 'COMMON_06', category: '공통', subCategory: '양중', grade: 'standard', name: '승강기 사용료 (관리실납부)', spec: '아파트 표준', unit: '식', price: 150000, lastUpdated: '2024-02-27', workLink: { laborType: 'none' } },
+    { id: 'COMMON_07', category: '공통', subCategory: '보양', grade: 'standard', name: '승강기 보양 (준공청소포함)', spec: '전문업체', unit: '식', price: 250000, lastUpdated: '2024-02-27', workLink: { laborType: 'none' } },
+    
     // [1] 철거 (Demolition)
     { id: 'DEMO_01', category: '철거', subCategory: '소모품', grade: 'standard', name: '브레이커/컷팅기 소모품', spec: '날/노미', unit: '식', price: 50000, lastUpdated: '2024-02-01', workLink: { laborType: 'demolition' } },
+    { id: 'DEMO_02', category: '철거', subCategory: '폐기물', grade: 'standard', name: '0.5톤 폐기물 처리 (반차)', spec: '욕실단독용', unit: '대', price: 250000, lastUpdated: '2024-02-27', workLink: { laborType: 'demolition' } },
 
     // [2] 목공/단열 (Carpentry & Insulation - CRITICAL FOR LOGIC)
     { id: 'WOOD_01', category: '목공', subCategory: '자재', grade: 'standard', brand: 'KCC', name: '석고보드(일반)', spec: '9.5T 3x6', unit: '장', price: 3500, lastUpdated: '2024-02-01', workLink: { laborType: 'carpenter_member' } },
@@ -109,6 +112,8 @@ const INITIAL_MATERIALS: MaterialDatabaseItem[] = [
     { id: 'WOOD_08', category: '목공', subCategory: '벽체신설', grade: 'standard', name: '경량철골 스터드(Stud)', spec: '65형', unit: '본', price: 6000, lastUpdated: '2024-02-01', workLink: { laborType: 'carpenter_member' } },
     { id: 'WOOD_09', category: '목공', subCategory: '벽체신설', grade: 'standard', name: '경량철골 러너(Runner)', spec: '65형', unit: '본', price: 5000, lastUpdated: '2024-02-01', workLink: { laborType: 'carpenter_member' } },
     { id: 'WOOD_10', category: '목공', subCategory: '몰딩', grade: 'high_end', name: '마이너스 몰딩 프로파일', spec: '알루미늄 3m', unit: '본', price: 15000, lastUpdated: '2024-02-01', workLink: { laborType: 'carpenter_foreman' } },
+    // New Door Installation Item
+    { id: 'WOOD_11', category: '목공', subCategory: '시공비', grade: 'standard', name: '도어 전문 설치비 (문틀+도어)', spec: '폼충진포함', unit: '짝', price: 80000, lastUpdated: '2024-02-27', workLink: { laborType: 'none' } },
 
     // [3] 전기/조명 (Electrical)
     { id: 'ELEC_01', category: '전기', subCategory: '배선기구', grade: 'standard', brand: '르그랑', name: '아펠라 스위치 1구', spec: '화이트', unit: '개', price: 5500, lastUpdated: '2024-02-01', workLink: { laborType: 'electrician' } },
@@ -116,6 +121,8 @@ const INITIAL_MATERIALS: MaterialDatabaseItem[] = [
     { id: 'ELEC_03', category: '전기', subCategory: '조명', grade: 'standard', brand: '필립스', name: '3인치 COB 다운라이트', spec: '7W 4000K', unit: '개', price: 8500, lastUpdated: '2024-02-01', workLink: { laborType: 'electrician' } },
     { id: 'ELEC_04', category: '전기', subCategory: '조명', grade: 'standard', name: 'T5 간접조명', spec: '1200mm 4000K', unit: '개', price: 7000, lastUpdated: '2024-02-01', workLink: { laborType: 'electrician' } },
     { id: 'ELEC_05', category: '전기', subCategory: '조명', grade: 'high_end', brand: '솔라루체', name: '초슬림 엣지 면조명', spec: '1280*320', unit: '개', price: 45000, lastUpdated: '2024-02-01', workLink: { laborType: 'electrician' } },
+    // New Bath Electrical
+    { id: 'ELEC_06', category: '전기', subCategory: '시공비', grade: 'standard', name: '욕실 부분 전기작업 (간접등/이설)', spec: '2시간 기준', unit: '식', price: 100000, lastUpdated: '2024-02-27', workLink: { laborType: 'none' } },
 
     // [4] 설비/방수 (Plumbing)
     { id: 'PLUMB_01', category: '설비', subCategory: '배관', grade: 'standard', name: 'PB 파이프(에이콘)', spec: '15A 롤', unit: '롤', price: 45000, lastUpdated: '2024-02-01', workLink: { laborType: 'plumber' } },
