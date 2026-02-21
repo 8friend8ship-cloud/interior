@@ -9,6 +9,17 @@ const REFERENCES_KEY = 'johnson_admin_references_v1';
 const PERSONA_KEY = 'johnson_admin_personas_v1';
 const CONTRACTORS_KEY = 'johnson_admin_contractors_v1';
 const MATERIALS_KEY = 'johnson_admin_materials_v1'; 
+const HISTORICAL_DETAILED_KEY = 'johnson_historical_detailed_v1';
+
+export interface HistoricalDetailedEstimate {
+    id: string;
+    type: 'bathroom' | 'sash';
+    area: number;
+    buildingType?: string;
+    totalPrice: number;
+    summary: string; // Brief description of specs
+    timestamp: string;
+}
 
 // --- Prices ---
 export const getStoredPriceTable = (): UnitPrice[] => {
@@ -45,7 +56,7 @@ export const saveLaborData = (laborData: typeof LABOR_DATA) => {
 const DEFAULT_REFERENCES = `[존슨 지침: 인테리어 표준 시공 가이드라인 v2.1]
 
 1. 양중 및 보양 (아파트 vs 비아파트 구분)
-- 아파트: 사다리차 사용 불가 시 '엘리베이터 사용료(관리실 납부)'와 '승강기 보양비(건축자재)'로 대체하여 견적한다.
+- 아파트: 사다리차 사용 불가 시 '엘리베이터 사용료(관리실 납부)'와 '승강기 보양비(인테리어 자재)'로 대체하여 견적한다.
 - 빌라/단독: 창호/철거 공사 시 '사다리차 비용'을 기본으로 적용한다.
 
 2. 철거 및 폐기물 기준
@@ -277,6 +288,27 @@ export const getStoredContractors = (): VerifiedContractor[] => {
 
 export const saveContractors = (contractors: VerifiedContractor[]) => {
     localStorage.setItem(CONTRACTORS_KEY, JSON.stringify(contractors));
+};
+
+// --- Historical Detailed Estimates ---
+export const getStoredHistoricalDetailed = (): HistoricalDetailedEstimate[] => {
+    try {
+        const stored = localStorage.getItem(HISTORICAL_DETAILED_KEY);
+        return stored ? JSON.parse(stored) : [];
+    } catch (e) {
+        return [];
+    }
+};
+
+export const saveHistoricalDetailed = (estimates: HistoricalDetailedEstimate[]) => {
+    localStorage.setItem(HISTORICAL_DETAILED_KEY, JSON.stringify(estimates));
+};
+
+export const addHistoricalDetailed = (estimate: HistoricalDetailedEstimate) => {
+    const current = getStoredHistoricalDetailed();
+    // Keep only last 20 for context
+    const updated = [...current, estimate].slice(-20);
+    saveHistoricalDetailed(updated);
 };
 
 export const getStoredDemoTemplate = (type: 'full' | 'bathroom'): GeneratedPlan => {

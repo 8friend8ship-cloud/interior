@@ -19,6 +19,7 @@ import {
     generateProjectSchedule, // NEW Import
     createVirtualPlanFromDimensions
 } from './services/geminiService';
+import { addHistoricalDetailed } from './utils/adminStorage';
 import { AppState, ProjectDetails, GeneratedPlan } from './types';
 
 const App: React.FC = () => {
@@ -120,6 +121,22 @@ const App: React.FC = () => {
         // Race the logic against the timeout
         const basicPlan = await Promise.race([logicPromise, timeoutPromise]) as GeneratedPlan;
         
+        // NEW: Save detailed estimates to history for future "Full Interior" context
+        if (details.projectScope === 'bathroom' || details.projectScope === 'sash') {
+            const totalPrice = basicPlan.costEstimate.reduce((sum, item) => sum + (item.totalPrice || 0), 0);
+            const summary = basicPlan.designConcept.description.substring(0, 100) + "...";
+            
+            addHistoricalDetailed({
+                id: `hist_${Date.now()}`,
+                type: details.projectScope,
+                area: details.area,
+                buildingType: details.buildingType,
+                totalPrice,
+                summary,
+                timestamp: new Date().toISOString()
+            });
+        }
+
         setGeneratedPlan(basicPlan);
         setAppState(AppState.RESULTS);
       } catch (err) {

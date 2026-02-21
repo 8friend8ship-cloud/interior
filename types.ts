@@ -117,7 +117,7 @@ export interface DetailedScope {
     sashCondition?: string;
     sashConfig?: {
         brand: 'kcc' | 'lx' | 'hyundai';
-        glass: 'general_22' | 'low_e_24' | 'triple_system'; 
+        glass: 'general_22' | 'low_e_24' | 'low_e_26' | 'triple_31' | 'triple_39' | 'triple_43' | 'triple_system'; 
         windowType: 'double' | 'system'; 
     };
 
@@ -205,6 +205,29 @@ export interface ProjectScopeFlags {
     expansion: boolean;
 }
 
+export interface SashItem {
+  id: string;
+  location: string; // e.g., '거실 분합창', '안방', '작은방1'
+  width: number;
+  height: number;
+  brand: 'kcc' | 'lx' | 'hyundai' | 'other';
+  glass: 'general_22' | 'low_e_24' | 'low_e_26' | 'triple_31' | 'triple_39' | 'triple_43' | 'triple_system';
+  windowType: 'double' | 'single' | 'system' | 'fix';
+  openType: 'sliding' | 'casement' | 'tilt_turn';
+  extras: {
+    autoHandle: boolean;
+    bugNet: boolean;
+  };
+}
+
+export interface SashSpecifics {
+  items: SashItem[];
+  removalWork: 'self' | 'include'; // 철거 작업 포함 여부
+  liftingWork: 'ladder' | 'crane' | 'elevator'; // 양중 방식
+}
+
+export type ProjectScope = 'full' | 'bathroom' | 'sash';
+
 export interface ProjectDetails {
   area: number; 
   address?: string; 
@@ -246,8 +269,9 @@ export interface ProjectDetails {
   };
   modelType: 'standard' | 'pro';
   isDemo?: boolean;
-  projectScope: 'full' | 'bathroom';
+  projectScope: ProjectScope;
   bathroomSpecifics?: BathroomSpecifics;
+  sashSpecifics?: SashSpecifics; // NEW
   wants3DGeneration?: boolean;
 }
 
@@ -305,6 +329,7 @@ export interface MaterialDatabaseItem {
     searchKeywords?: string[]; 
     description?: string;
     lastUpdated: string;
+    isDefault?: boolean; // NEW: Indicates if this is the default item for its subcategory
 }
 
 export interface PromptSet {
@@ -498,6 +523,7 @@ export interface UnitPrice {
   priceStandard: number;
   priceHigh: number;
   description: string;
+  calculationMethod?: 'area' | 'unit' | 'lump_sum'; // NEW: How this price is calculated
 }
 
 export interface VerifiedContractor {

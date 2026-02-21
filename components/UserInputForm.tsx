@@ -1,7 +1,8 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { ProjectDetails, BathroomSpecifics, ProjectScopeFlags, DetailedScope } from '../types';
+import { ProjectDetails, BathroomSpecifics, ProjectScopeFlags, DetailedScope, SashItem, SashSpecifics, MaterialDatabaseItem } from '../types';
 import { MOCK_IMAGE_BASE64 } from '../constants/mockData';
+import { getStoredMaterials } from '../utils/adminStorage';
 
 interface UserInputFormProps {
   onSubmit: (details: ProjectDetails) => void;
@@ -15,7 +16,17 @@ const expansionAreas = [
     { id: 'room3', label: '안방' },
 ];
 
-type TabType = 'full' | 'bathroom';
+const SASH_GLASS_OPTIONS = [
+    { value: 'general_22', label: '일반 22mm 복층', types: ['double', 'single', 'fix'] },
+    { value: 'low_e_24', label: '24mm 로이유리 (표준)', types: ['double', 'single', 'fix'] },
+    { value: 'low_e_26', label: '26mm 로이유리 (고성능)', types: ['double', 'single', 'fix'] },
+    { value: 'triple_31', label: '31mm 3중 유리 (시스템)', types: ['system'] },
+    { value: 'triple_39', label: '39mm 3중 유리 (시스템)', types: ['system'] },
+    { value: 'triple_43', label: '43mm 3중 유리 (시스템)', types: ['system'] },
+    { value: 'triple_system', label: '3중 시스템 유리 (범용)', types: ['system', 'double'] },
+];
+
+type TabType = 'full' | 'bathroom' | 'sash';
 type UnitType = 'py' | 'm2';
 
 // CheckboxItem moved outside for stability
@@ -43,6 +54,12 @@ const CheckboxItem = ({ id, label, checked, onChange, notePlaceholder, subLabel 
 
 export const UserInputForm: React.FC<UserInputFormProps> = ({ onSubmit, error }) => {
   const [activeTab, setActiveTab] = useState<TabType>('full');
+
+  // Sash-Specific State
+  const [sashItems, setSashItems] = useState<SashItem[]>([
+    { id: `sash-${Date.now()}`, location: '거실 분합창', width: 2400, height: 2200, brand: 'kcc', glass: 'low_e_24', windowType: 'double', openType: 'sliding', extras: { autoHandle: false, bugNet: true } },
+  ]);
+  const [sashLiftingWork, setSashLiftingWork] = useState<SashSpecifics['liftingWork']>('elevator');
 
   // Common Fields
   const [image, setImage] = useState<{ file: File; preview: string; } | null>(null);
@@ -97,8 +114,16 @@ export const UserInputForm: React.FC<UserInputFormProps> = ({ onSubmit, error })
   const [sashScope, setSashScope] = useState<'all' | 'partial'>('all');
   const [sashPartialText, setSashPartialText] = useState<string>('');
   const [sashBrand, setSashBrand] = useState<'kcc' | 'lx' | 'hyundai'>('kcc');
-  const [sashGlass, setSashGlass] = useState<'general_22' | 'low_e_24' | 'triple_system'>('low_e_24');
+  const [sashGlass, setSashGlass] = useState<'general_22' | 'low_e_24' | 'low_e_26' | 'triple_31' | 'triple_39' | 'triple_43' | 'triple_system'>('low_e_24');
   const [sashType, setSashType] = useState<'double' | 'system'>('double');
+
+  // Reset sashGlass when sashType changes to ensure valid selection
+  useEffect(() => {
+    const validOptions = SASH_GLASS_OPTIONS.filter(opt => opt.types.includes(sashType));
+    if (!validOptions.some(opt => opt.value === sashGlass)) {
+      setSashGlass(validOptions[0].value as any);
+    }
+  }, [sashType]);
 
   // Door Mode
   const [doorMode, setDoorMode] = useState<'replace_all' | 'replace_door_film_frame' | 'film_both' | 'paint_both'>('replace_all');
@@ -173,7 +198,7 @@ export const UserInputForm: React.FC<UserInputFormProps> = ({ onSubmit, error })
 
   useEffect(() => {
       checkFormValidity();
-  }, [area, targetDate, moveInDate, image, useDimensionsOnly, activeTab, bathWidth, bathDepth, bathHeight, isScopeConfirmed]);
+  }, [area, targetDate, moveInDate, image, useDimensionsOnly, activeTab, bathWidth, bathDepth, bathHeight, isScopeConfirmed, sashItems]);
 
   // Sync 'permit' state when expansion is selected
   useEffect(() => {
@@ -186,12 +211,14 @@ export const UserInputForm: React.FC<UserInputFormProps> = ({ onSubmit, error })
       let valid = false;
       if (activeTab === 'full') {
           valid = !!area && !!targetDate && !!moveInDate && !!image && isScopeConfirmed;
-      } else {
+      } else if (activeTab === 'bathroom') {
           if (useDimensionsOnly) {
               valid = !!targetDate && !!bathWidth && !!bathDepth && !!bathHeight;
           } else {
               valid = !!targetDate && !!image;
           }
+      } else if (activeTab === 'sash') {
+          valid = !!targetDate && sashItems.every(item => item.location && item.width > 0 && item.height > 0);
       }
       setIsFormValid(valid);
   };
@@ -292,6 +319,64 @@ export const UserInputForm: React.FC<UserInputFormProps> = ({ onSubmit, error })
       setItemNotes(prev => ({ ...prev, [key]: value }));
   };
 
+  const [wants3D, setWants3D] = useState(true);
+
+  // Default Materials from Admin
+  const [defaultMaterials, setDefaultMaterials] = useState<MaterialDatabaseItem[]>([]);
+
+  useEffect(() => {
+      const materials = getStoredMaterials();
+      setDefaultMaterials(materials.filter(m => m.isDefault));
+  }, []);
+
+  const getDefaultMaterialName = (subCategory: string, fallback: string) => {
+      const item = defaultMaterials.find(m => m.subCategory === subCategory);
+      return item ? item.name : fallback;
+  };
+
+  const handleAddSashItem = () => {
+    setSashItems((prev) => [
+      ...prev,
+      { id: `sash-${Date.now()}`, location: '', width: 1200, height: 1200, brand: 'kcc', glass: 'low_e_24', windowType: 'double', openType: 'sliding', extras: { autoHandle: false, bugNet: true } },
+    ]);
+  };
+
+  const handleRemoveSashItem = (id: string) => {
+    if (sashItems.length > 1) {
+      setSashItems((prev) => prev.filter((item) => item.id !== id));
+    } else {
+      alert('최소 1개의 창호 항목이 필요합니다.');
+    }
+  };
+
+  const handleSashItemChange = (id: string, field: string, value: any) => {
+    setSashItems((prev) =>
+      prev.map((item) => {
+        if (item.id === id) {
+          if (field === 'windowType') {
+            const newType = value as 'double' | 'single' | 'system' | 'fix';
+            const mappedType = (newType === 'single' || newType === 'double') ? 'double' : newType;
+            const validOptions = SASH_GLASS_OPTIONS.filter(opt => opt.types.includes(mappedType));
+            
+            // If current glass is not valid for new window type, reset it
+            if (!validOptions.some(opt => opt.value === item.glass)) {
+              return { ...item, [field]: value, glass: validOptions[0].value as any };
+            }
+          }
+          if (field === 'autoHandle' || field === 'bugNet') {
+            return { ...item, extras: { ...item.extras, [field]: value as boolean } };
+          }
+          if (field === 'width' || field === 'height') {
+            const numValue = parseInt(value, 10);
+            return { ...item, [field]: isNaN(numValue) ? 0 : numValue };
+          }
+          return { ...item, [field]: value };
+        }
+        return item;
+      })
+    );
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -307,6 +392,8 @@ export const UserInputForm: React.FC<UserInputFormProps> = ({ onSubmit, error })
     }
     
     let bathroomSpecifics: BathroomSpecifics | undefined;
+    let sashSpecifics: SashSpecifics | undefined;
+
     if (activeTab === 'bathroom') {
         bathroomSpecifics = {
             demolitionType: bathDemolition,
@@ -332,6 +419,12 @@ export const UserInputForm: React.FC<UserInputFormProps> = ({ onSubmit, error })
                 indirectLight: bathElecIndirect,
                 fanConnection: bathElecFan
             }
+        };
+    } else if (activeTab === 'sash') {
+        sashSpecifics = {
+            items: sashItems,
+            removalWork: 'include', // Or based on a new UI element
+            liftingWork: sashLiftingWork,
         };
     }
 
@@ -406,7 +499,8 @@ export const UserInputForm: React.FC<UserInputFormProps> = ({ onSubmit, error })
       isDemo: false,
       projectScope: activeTab,
       bathroomSpecifics,
-      wants3DGeneration: false
+      sashSpecifics, // NEW
+      wants3DGeneration: wants3D
     });
   };
 
@@ -458,7 +552,7 @@ export const UserInputForm: React.FC<UserInputFormProps> = ({ onSubmit, error })
         modelType: 'pro',
         isDemo: true,
         projectScope: activeTab,
-        wants3DGeneration: false
+        wants3DGeneration: true
     });
   };
 
@@ -472,8 +566,8 @@ export const UserInputForm: React.FC<UserInputFormProps> = ({ onSubmit, error })
   return (
     <div className="max-w-3xl mx-auto bg-white rounded-xl shadow-lg overflow-hidden border border-gray-100">
       <div className="bg-white border-b p-6 text-center">
-        <h2 className="text-2xl font-bold text-gray-800 mb-1">AI 건축 견적 의뢰서</h2>
-        <p className="text-gray-500 text-sm">정확한 분석을 위해 도면과 상세 정보를 입력해주세요.</p>
+        <h2 className="text-2xl font-bold text-gray-800 mb-1">AI 인테리어 견적 의뢰서</h2>
+        <p className="text-gray-500 text-sm">AI 인테리어 파트너가 정확한 분석을 위해 정보를 요청합니다.</p>
       </div>
 
       <div className="flex border-b bg-gray-50">
@@ -482,6 +576,9 @@ export const UserInputForm: React.FC<UserInputFormProps> = ({ onSubmit, error })
         </button>
         <button className={`flex-1 py-4 font-bold text-center transition-colors text-sm ${activeTab === 'bathroom' ? 'text-indigo-600 border-b-2 border-indigo-600 bg-white' : 'text-gray-500 hover:text-gray-700'}`} onClick={() => setActiveTab('bathroom')}>
           🛁 욕실 집중 (Bathroom Only)
+        </button>
+        <button className={`flex-1 py-4 font-bold text-center transition-colors text-sm ${activeTab === 'sash' ? 'text-indigo-600 border-b-2 border-indigo-600 bg-white' : 'text-gray-500 hover:text-gray-700'}`} onClick={() => setActiveTab('sash')}>
+          🪟 샤시 집중 (Sash Only)
         </button>
       </div>
       
@@ -606,7 +703,7 @@ export const UserInputForm: React.FC<UserInputFormProps> = ({ onSubmit, error })
                                         <label className="block text-xs font-bold text-gray-700 mb-2">벽면 마감재 종류</label>
                                         <div className="flex flex-col gap-2">
                                             <label className="flex items-center text-sm cursor-pointer"><input type="radio" checked={wallFinishType === 'wallpaper'} onChange={() => { setWallFinishType('wallpaper'); setWallLayers('1ply'); setWallAllPutty(false); }} className="mr-2 text-indigo-600" />실크 도배 (표준)</label>
-                                            <label className="flex items-center text-sm cursor-pointer"><input type="radio" checked={wallFinishType === 'paint'} onChange={() => { setWallFinishType('paint'); setWallLayers('2ply'); setWallAllPutty(true); }} className="mr-2 text-indigo-600" />건축 도장 (벤자민무어 등) <span className="text-[10px] text-red-500 ml-1 font-bold">+고가</span></label>
+                                            <label className="flex items-center text-sm cursor-pointer"><input type="radio" checked={wallFinishType === 'paint'} onChange={() => { setWallFinishType('paint'); setWallLayers('2ply'); setWallAllPutty(true); }} className="mr-2 text-indigo-600" />인테리어 도장 (벤자민무어 등) <span className="text-[10px] text-red-500 ml-1 font-bold">+고가</span></label>
                                             <label className="flex items-center text-sm cursor-pointer"><input type="radio" checked={wallFinishType === 'film'} onChange={() => { setWallFinishType('film'); }} className="mr-2 text-indigo-600" />인테리어 필름 (부분/전체) <span className="text-[10px] text-orange-500 ml-1 font-bold">+중고가</span></label>
                                         </div>
                                     </div>
@@ -659,7 +756,7 @@ export const UserInputForm: React.FC<UserInputFormProps> = ({ onSubmit, error })
                         {scopes.expansion && (
                             <div className="bg-white p-4 rounded-lg border border-indigo-100">
                                 <h5 className="text-sm font-bold text-gray-800 mb-3 flex items-center gap-2">
-                                    <span className="text-lg">🧱</span> 확장 공사 상세 설정 (건축 공정 포함)
+                                    <span className="text-lg">🧱</span> 확장 공사 상세 설정 (인테리어 공정 포함)
                                 </h5>
                                 <div className="mb-4">
                                     <label className="text-xs text-gray-500 block mb-2 font-semibold">새로 확장할 곳 선택 (철거/단열/난방 포함)</label>
@@ -700,18 +797,37 @@ export const UserInputForm: React.FC<UserInputFormProps> = ({ onSubmit, error })
 
                         {scopes.sash && (
                             <div className="bg-white p-4 rounded-lg border border-indigo-100">
-                                <h5 className="text-sm font-bold text-gray-800 mb-3 flex items-center gap-2"><span className="text-lg">🪟</span> 샷시(창호) 상세 설정</h5>
+                                <h5 className="text-sm font-bold text-gray-800 mb-3 flex items-center gap-2"><span className="text-lg">🪟</span> 샷시(창호) 설정</h5>
+                                
+                                <div className="p-3 bg-blue-50 rounded-lg border border-blue-100 flex items-start gap-2 mb-4">
+                                    <span className="text-blue-600 mt-0.5">ℹ️</span>
+                                    <div className="text-[11px] text-blue-800 leading-relaxed">
+                                        전체 인테리어 모드에서는 샤시가 <strong>'식(Lump Sum)'</strong>으로 간략하게 계산됩니다. 
+                                        개별 창호의 정확한 규격과 사양을 반영한 상세 견적이 필요하시면 상단의 <strong>'샤시 집중'</strong> 메뉴를 이용해 주세요.
+                                    </div>
+                                </div>
+
                                 <div className="flex gap-4 mb-3">
-                                    <label className="flex items-center text-sm cursor-pointer p-2 hover:bg-gray-50 rounded"><input type="radio" name="sashScope" checked={sashScope === 'all'} onChange={() => setSashScope('all')} className="mr-2 text-indigo-600 focus:ring-indigo-500" />전체 교체 (Whole House)</label>
-                                    <label className="flex items-center text-sm cursor-pointer p-2 hover:bg-gray-50 rounded"><input type="radio" name="sashScope" checked={sashScope === 'partial'} onChange={() => setSashScope('partial')} className="mr-2 text-indigo-600 focus:ring-indigo-500" />부분 교체 (Partial)</label>
+                                    <label className="flex items-center text-sm cursor-pointer p-2 hover:bg-gray-50 rounded"><input type="radio" name="sashScope" checked={sashScope === 'all'} onChange={() => setSashScope('all')} className="mr-2 text-indigo-600 focus:ring-indigo-500" />전체 교체</label>
+                                    <label className="flex items-center text-sm cursor-pointer p-2 hover:bg-gray-50 rounded"><input type="radio" name="sashScope" checked={sashScope === 'partial'} onChange={() => setSashScope('partial')} className="mr-2 text-indigo-600 focus:ring-indigo-500" />부분 교체</label>
                                 </div>
-                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 bg-gray-50 p-3 rounded">
-                                    <div><label className="block text-xs font-bold text-gray-700 mb-1">브랜드</label><select value={sashBrand} onChange={(e) => setSashBrand(e.target.value as any)} className="w-full text-sm border p-2 rounded bg-white text-gray-900"><option value="kcc">KCC (가성비 우수)</option><option value="lx">LX Z:IN (프리미엄)</option><option value="hyundai">현대 L&C</option></select></div>
-                                    <div><label className="block text-xs font-bold text-gray-700 mb-1">유리 사양</label><select value={sashGlass} onChange={(e) => setSashGlass(e.target.value as any)} className="w-full text-sm border p-2 rounded bg-white text-gray-900"><option value="general_22">일반 22mm 복층</option><option value="low_e_24">24mm 로이유리 (추천)</option><option value="triple_system">3중 시스템 유리 (고가)</option></select></div>
-                                    <div><label className="block text-xs font-bold text-gray-700 mb-1">창호 타입</label><select value={sashType} onChange={(e) => setSashType(e.target.value as any)} className="w-full text-sm border p-2 rounded bg-white text-gray-900"><option value="double">이중창 (내창/발코니)</option><option value="system">시스템 창호 (오피스텔형)</option></select></div>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-gray-50 p-3 rounded">
+                                    <div><label className="block text-xs font-bold text-gray-700 mb-1">브랜드</label><select value={sashBrand} onChange={(e) => setSashBrand(e.target.value as any)} className="w-full text-sm border p-2 rounded bg-white text-gray-900"><option value="kcc">KCC (가성비)</option><option value="lx">LX Z:IN (프리미엄)</option><option value="hyundai">현대 L&C</option></select></div>
+                                    <div><label className="block text-xs font-bold text-gray-700 mb-1">창호 타입</label><select value={sashType} onChange={(e) => setSashType(e.target.value as any)} className="w-full text-sm border p-2 rounded bg-white text-gray-900"><option value="double">이중창 (표준)</option><option value="system">시스템 창호</option></select></div>
                                 </div>
-                                {sashScope === 'all' && (<div className="mt-2"><label className="text-xs text-gray-600 block mb-1">교체할 창호 개수 (대략)</label><input type="number" value={windowCount} onChange={e => setWindowCount(parseInt(e.target.value))} className="w-full text-sm border p-2 rounded bg-white text-gray-900" placeholder="예: 5" /></div>)}
-                                {sashScope === 'partial' && (<div className="mt-2"><label className="text-xs text-gray-600 block mb-1 font-bold">어디를 교체하시겠습니까?</label><input type="text" value={sashPartialText} onChange={e => setSashPartialText(e.target.value)} className="w-full text-sm border p-2 rounded bg-white text-gray-900" placeholder="예: 안방, 거실 분합창" /></div>)}
+                            </div>
+                        )}
+
+                        {(scopes.bath1 || scopes.bath2) && (
+                            <div className="bg-white p-4 rounded-lg border border-indigo-100">
+                                <h5 className="text-sm font-bold text-gray-800 mb-3 flex items-center gap-2"><span className="text-lg">🛁</span> 욕실 설정</h5>
+                                <div className="p-3 bg-blue-50 rounded-lg border border-blue-100 flex items-start gap-2">
+                                    <span className="text-blue-600 mt-0.5">ℹ️</span>
+                                    <div className="text-[11px] text-blue-800 leading-relaxed">
+                                        전체 인테리어 모드에서는 욕실이 <strong>'식(Lump Sum)'</strong>으로 간략하게 계산됩니다. 
+                                        타일 크기, 도기 브랜드 등 세부 옵션을 반영한 상세 견적이 필요하시면 상단의 <strong>'욕실 집중'</strong> 메뉴를 이용해 주세요.
+                                    </div>
+                                </div>
                             </div>
                         )}
 
@@ -734,8 +850,8 @@ export const UserInputForm: React.FC<UserInputFormProps> = ({ onSubmit, error })
                             <div className="bg-white p-4 rounded-lg border border-indigo-100">
                                 <h5 className="text-sm font-bold text-gray-800 mb-3 flex items-center gap-2"><span className="text-lg">🪵</span> 바닥재 설정</h5>
                                 <select value={flooringLayout} onChange={e => setFlooringLayout(e.target.value as any)} className="w-full text-sm border p-2 rounded bg-white text-gray-900 mb-3">
-                                    <option value="all_maru">전체 강마루 시공</option>
-                                    <option value="all_jangpan">전체 장판 시공</option>
+                                    <option value="all_maru">전체 강마루 시공 ({getDefaultMaterialName('마루', '구정마루')})</option>
+                                    <option value="all_jangpan">전체 장판 시공 ({getDefaultMaterialName('장판', 'LX하우시스')})</option>
                                     <option value="all_tile">전체 타일 시공 (고급)</option>
                                     <option value="mix_tile_maru">거실 타일 + 방 마루</option>
                                     <option value="mix_maru_jangpan">거실 마루 + 방 장판</option>
@@ -918,7 +1034,7 @@ export const UserInputForm: React.FC<UserInputFormProps> = ({ onSubmit, error })
                             <div className="bg-gray-50 p-2 rounded">
                                 <label className="text-xs font-bold text-gray-600 block mb-1">양변기 종류</label>
                                 <select value={bathToilet} onChange={(e) => setBathToilet(e.target.value as any)} className="w-full border p-1.5 rounded text-xs bg-white text-gray-900">
-                                    <option value="two_piece">투피스 (가성비/수압강함)</option>
+                                    <option value="two_piece">투피스 ({getDefaultMaterialName('양변기', '가성비/수압강함')})</option>
                                     <option value="one_piece">원피스 (디자인/소음적음)</option>
                                     <option value="wall_hung">벽걸이/비데일체형 (+고가)</option>
                                 </select>
@@ -926,7 +1042,7 @@ export const UserInputForm: React.FC<UserInputFormProps> = ({ onSubmit, error })
                             <div className="bg-gray-50 p-2 rounded">
                                 <label className="text-xs font-bold text-gray-600 block mb-1">세면대 종류</label>
                                 <select value={bathBasin} onChange={(e) => setBathBasin(e.target.value as any)} className="w-full border p-1.5 rounded text-xs bg-white text-gray-900">
-                                    <option value="half_pedestal">반다리 세면대 (벽배수)</option>
+                                    <option value="half_pedestal">반다리 세면대 ({getDefaultMaterialName('세면기', '벽배수')})</option>
                                     <option value="full_pedestal">긴다리 세면대 (바닥배수)</option>
                                     <option value="top_counter">탑볼/카운터형 (+하부장)</option>
                                 </select>
@@ -934,7 +1050,7 @@ export const UserInputForm: React.FC<UserInputFormProps> = ({ onSubmit, error })
                             <div className="bg-gray-50 p-2 rounded">
                                 <label className="text-xs font-bold text-gray-600 block mb-1">수전 컬러/마감</label>
                                 <select value={bathFaucet} onChange={(e) => setBathFaucet(e.target.value as any)} className="w-full border p-1.5 rounded text-xs bg-white text-gray-900">
-                                    <option value="standard_chrome">기본 크롬 (유광)</option>
+                                    <option value="standard_chrome">기본 크롬 ({getDefaultMaterialName('수전', '유광')})</option>
                                     <option value="matte_sus">무광 니켈 (SUS304)</option>
                                     <option value="color_coated">화이트/블랙/골드</option>
                                 </select>
@@ -976,6 +1092,69 @@ export const UserInputForm: React.FC<UserInputFormProps> = ({ onSubmit, error })
                 </div>
             )}
 
+            {/* 3D Generation Option */}
+            <div className="bg-blue-50 p-4 rounded-lg border border-blue-200 mb-4">
+                <label className="flex items-center cursor-pointer">
+                    <input 
+                        type="checkbox" 
+                        checked={wants3D} 
+                        onChange={(e) => setWants3D(e.target.checked)} 
+                        className="w-5 h-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500" 
+                    />
+                    <div className="ml-3">
+                        <span className="font-bold text-blue-800 text-sm">AI 3D 디자인 시안 생성 (추천)</span>
+                        <p className="text-xs text-blue-600 mt-0.5">
+                            체크 시 우리 집 구조에 맞는 아이소메트릭/투시도 이미지를 생성합니다. (약 30초 추가 소요)
+                        </p>
+                    </div>
+                </label>
+            </div>
+
+            {/* ================================================================================== */}
+            {/* [NEW] SASH DETAILED CHECKLIST (SASH MODE) */}
+            {/* ================================================================================== */}
+            {activeTab === 'sash' && (
+                <div className="space-y-6 animate-fade-in-up">
+                    <h3 className="text-lg font-bold text-gray-900 border-b pb-2 flex items-center">
+                        <span className="text-2xl mr-2">🪟</span> 샤시 상세 견적 요청
+                    </h3>
+
+                    {sashItems.map((item, index) => (
+                        <div key={item.id} className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm relative">
+                            <div className="flex justify-between items-center mb-4">
+                                <h4 className="font-bold text-gray-800 flex items-center gap-2 text-sm"><span className="text-indigo-600">창호 #{index + 1}</span></h4>
+                                <button type="button" onClick={() => handleRemoveSashItem(item.id)} className="text-red-500 hover:text-red-700 text-xs font-bold">삭제</button>
+                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <input type="text" placeholder="위치 (예: 거실 분합창)" value={item.location} onChange={(e) => handleSashItemChange(item.id, 'location', e.target.value)} className="w-full border p-2 rounded text-sm bg-white text-gray-900" />
+                                <div className="grid grid-cols-2 gap-2">
+                                    <input type="number" placeholder="가로(mm)" value={item.width} onChange={(e) => handleSashItemChange(item.id, 'width', e.target.value)} className="w-full border p-2 rounded text-sm bg-white text-gray-900" />
+                                    <input type="number" placeholder="세로(mm)" value={item.height} onChange={(e) => handleSashItemChange(item.id, 'height', e.target.value)} className="w-full border p-2 rounded text-sm bg-white text-gray-900" />
+                                </div>
+                                <select value={item.brand} onChange={(e) => handleSashItemChange(item.id, 'brand', e.target.value)} className="w-full border p-2 rounded text-sm bg-white text-gray-900"><option value="kcc">KCC</option><option value="lx">LX Z:IN</option><option value="hyundai">현대L&C</option><option value="other">기타</option></select>
+                                <select value={item.glass} onChange={(e) => handleSashItemChange(item.id, 'glass', e.target.value)} className="w-full border p-2 rounded text-sm bg-white text-gray-900">
+                                    {SASH_GLASS_OPTIONS.filter(opt => opt.types.includes(item.windowType === 'single' || item.windowType === 'double' ? 'double' : item.windowType)).map(opt => (
+                                        <option key={opt.value} value={opt.value}>{opt.label}</option>
+                                    ))}
+                                </select>
+                                <select value={item.windowType} onChange={(e) => handleSashItemChange(item.id, 'windowType', e.target.value)} className="w-full border p-2 rounded text-sm bg-white text-gray-900"><option value="double">이중창</option><option value="single">단창</option><option value="system">시스템창</option><option value="fix">픽스창</option></select>
+                                <select value={item.openType} onChange={(e) => handleSashItemChange(item.id, 'openType', e.target.value)} className="w-full border p-2 rounded text-sm bg-white text-gray-900"><option value="sliding">슬라이딩</option><option value="casement">여닫이</option><option value="tilt_turn">Tilt & Turn</option></select>
+                            </div>
+                        </div>
+                    ))}
+                    <button type="button" onClick={handleAddSashItem} className="w-full py-2 border-2 border-dashed border-gray-300 text-gray-500 rounded-lg hover:bg-gray-50">+ 창호 추가</button>
+
+                    <div className="bg-yellow-50 p-5 rounded-xl border border-yellow-200 shadow-sm">
+                        <h4 className="font-bold text-yellow-800 mb-3 flex items-center gap-2 text-sm"><span className="text-lg">🚚</span> 자재 운반(양중) 방식</h4>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                            <label className="border p-3 rounded-lg cursor-pointer transition-all bg-white"><input type="radio" name="liftingWork" checked={sashLiftingWork === 'elevator'} onChange={() => setSashLiftingWork('elevator')} className="mr-2" />엘리베이터</label>
+                            <label className="border p-3 rounded-lg cursor-pointer transition-all bg-white"><input type="radio" name="liftingWork" checked={sashLiftingWork === 'ladder'} onChange={() => setSashLiftingWork('ladder')} className="mr-2" />사다리차</label>
+                            <label className="border p-3 rounded-lg cursor-pointer transition-all bg-white"><input type="radio" name="liftingWork" checked={sashLiftingWork === 'crane'} onChange={() => setSashLiftingWork('crane')} className="mr-2" />크레인</label>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {/* Submit Button */}
             <div className="flex flex-col gap-3">
                 <button
@@ -987,7 +1166,7 @@ export const UserInputForm: React.FC<UserInputFormProps> = ({ onSubmit, error })
                       : 'bg-indigo-600 hover:bg-indigo-700 hover:shadow-lg transform hover:-translate-y-0.5'
                     }`}
                 >
-                  {activeTab === 'bathroom' ? '🛁 전문가급 욕실 상세 견적 산출하기' : '✨ AI 인테리어 디자인 & 견적 받아보기'}
+                  {activeTab === 'bathroom' ? '🛁 전문가급 욕실 상세 견적 산출하기' : activeTab === 'sash' ? '🪟 전문가급 샤시 상세 견적 산출하기' : '✨ AI 인테리어 디자인 & 견적 받아보기'}
                 </button>
                 {activeTab === 'full' && (
                      <button onClick={handleDemoSubmit} className="text-xs text-gray-400 underline hover:text-gray-600 text-center">

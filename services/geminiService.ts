@@ -15,9 +15,17 @@ import {
     MaterialDatabaseItem
 } from '../types';
 import { MOCK_GENERATED_PLAN, MOCK_BATHROOM_PLAN, MOCK_VIRTUAL_PLAN, MOCK_IMAGE_BASE64 } from '../constants/mockData';
-import { getStoredReferenceGuidelines, getStoredMaterials } from '../utils/adminStorage';
+import { 
+    getStoredReferenceGuidelines, 
+    getStoredMaterials, 
+    getStoredLaborData,
+    getStoredHistoricalDetailed
+} from '../utils/adminStorage';
 
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+const getAI = () => {
+    const apiKey = process.env.GEMINI_API_KEY || process.env.API_KEY || "";
+    return new GoogleGenAI({ apiKey });
+};
 
 const cleanAndParseJSON = (text: string | undefined): any => {
     if (!text) return {};
@@ -46,9 +54,9 @@ const getRecentMarketPeriod = (): string => {
 
 export const validateApiKey = async (apiKey: string): Promise<boolean> => {
   try {
-    const testAi = new GoogleGenAI({ apiKey: apiKey || process.env.API_KEY });
+    const testAi = new GoogleGenAI({ apiKey: apiKey || process.env.GEMINI_API_KEY || process.env.API_KEY || "" });
     await testAi.models.generateContent({
-        model: 'gemini-2.5-flash',
+        model: 'gemini-3-flash-preview',
         contents: 'test',
     });
     return true;
@@ -99,8 +107,9 @@ export const analyzeFloorplan = async (image: { data: string; mimeType: string }
     };
 
     try {
+        const ai = getAI();
         const response = await ai.models.generateContent({
-            model: 'gemini-2.5-flash', 
+            model: 'gemini-3-flash-preview', 
             contents: {
                 parts: [
                     { inlineData: { mimeType: image.mimeType, data: image.data } },
@@ -135,9 +144,9 @@ export const generateVisualizations = async (
     image: { data: string; mimeType: string },
     modelType: 'standard' | 'pro',
     isDemo: boolean,
-    projectScope: 'full' | 'bathroom'
+    projectScope: ProjectScope
 ): Promise<{ isometricView: { data: string; mimeType: string; }; perspectiveView: { data: string; mimeType: string; }; }> => {
-    if (isDemo) {
+    if (isDemo || projectScope === 'sash') {
         return {
             isometricView: { data: MOCK_IMAGE_BASE64, mimeType: "image/gif" },
             perspectiveView: { data: MOCK_IMAGE_BASE64, mimeType: "image/gif" }
@@ -145,6 +154,7 @@ export const generateVisualizations = async (
     }
 
     try {
+        const ai = getAI();
         const isoRes = await ai.models.generateContent({
             model: 'gemini-2.5-flash-image', 
             contents: {
@@ -207,6 +217,7 @@ export const modifyImageStyle = async (
     if (isDemo) return baseImage;
 
     try {
+        const ai = getAI();
         const res = await ai.models.generateContent({
             model: 'gemini-2.5-flash-image',
             contents: {
@@ -247,9 +258,29 @@ export const generateProjectPlan = async (
     
     // FETCH MATERIAL DB TO CHECK WORK LINKS
     const materialDB = getStoredMaterials();
+    const defaultMaterials = materialDB.filter(m => m.isDefault);
+
+    // FETCH LABOR DATA
+    const laborData = getStoredLaborData();
+
+    // FETCH HISTORICAL DETAILED ESTIMATES
+    const historicalDetailed = getStoredHistoricalDetailed();
+    const relevantHistory = historicalDetailed.filter(h => 
+        (details.projectScope === 'full' && (h.type === 'bathroom' || h.type === 'sash')) ||
+        (details.projectScope === h.type)
+    );
 
     // Build a specific context string from detailed scopes to ensure AI sees it
     let scopeContext = "";
+    if (relevantHistory.length > 0) {
+        scopeContext += `
+        *** HISTORICAL DETAILED ESTIMATE DATA (FOR REFERENCE) ***
+        The following are previously calculated detailed estimates for similar scopes. 
+        Use these values as a basis for "Lump Sum (식)" items in Full Interior mode if applicable:
+        ${relevantHistory.map(h => `- Type: ${h.type}, Area: ${h.area}py, Total: ${h.totalPrice.toLocaleString()}원, Summary: ${h.summary}`).join('\n')}
+        `;
+    }
+
     if (detailedScope) {
         scopeContext += `
         SPECIFIC SCOPE DETAILS (MUST REFLECT IN ESTIMATE):
@@ -279,6 +310,17 @@ export const generateProjectPlan = async (
         - Ceiling: ${details.bathroomSpecifics.ceilingType}
         - Fixtures: Toilet(${details.bathroomSpecifics.toiletType}), Basin(${details.bathroomSpecifics.washbasinType}), Faucet(${details.bathroomSpecifics.faucetGrade})
         - Add-ons: Ventilation(${details.bathroomSpecifics.ventilation}), Heating(${details.bathroomSpecifics.floorHeating ? 'YES' : 'NO'}), Elec(${JSON.stringify(details.bathroomSpecifics.electricalOptions)})
+        `;
+    }
+
+    // NEW: Sash Specific Context
+    if (details.projectScope === 'sash' && details.sashSpecifics) {
+        scopeContext += `
+        *** SASH SPECIFIC DETAILS (CRITICAL) ***
+        - This is a SASH-ONLY estimate.
+        - Lifting Work Method: ${details.sashSpecifics.liftingWork} (This significantly affects labor/overhead costs).
+        - Sash Items:
+        ${details.sashSpecifics.items.map(item => `          - Location: ${item.location}, Size: ${item.width}x${item.height}mm, Brand: ${item.brand}, Glass: ${item.glass}, Type: ${item.windowType}`).join('\n')}
         `;
     }
 
@@ -324,23 +366,53 @@ export const generateProjectPlan = async (
          }
     };
 
+    const { image, ...detailsForPrompt } = details;
+    const ai = getAI();
+
     const response = await ai.models.generateContent({
-        model: 'gemini-2.5-flash',
+        model: 'gemini-3-flash-preview',
         contents: `
         You are an uncompromising, high-end interior construction Quantity Surveyor (QS) in South Korea.
         
         TASK: Generate a **Execution-Level Construction Estimate (실행 견적서)**.
+
+        CRITICAL RULE FOR FULL INTERIOR ESTIMATES:
+        1. If the project scope is "full", you MUST display "Sash (창호)" and "Bathroom (욕실)" as simplified "Lump Sum (식)" items.
+        2. Do NOT break down individual tiles, toilets, or window frames for these categories in "full" mode.
+        3. Instead, provide a single line item for "Bathroom (욕실 공사)" and "Sash (창호 공사)" with the unit as "식" (Lump Sum).
+        4. Use the provided "HISTORICAL DETAILED ESTIMATE DATA" to determine the appropriate lump sum price based on the area (${details.area}py) and building type.
+        5. In the "remarks" field for these items, mention: "상세 견적은 '욕실/샤시 집중 견적' 메뉴를 통해 별도로 확인하실 수 있습니다."
         
         PROJECT DATA:
-        ${JSON.stringify(details)}
+        ${JSON.stringify(detailsForPrompt)}
         
         CLIENT MATERIAL DB (Representative SKUs):
         ${JSON.stringify(materialDB)}
+
+        CLIENT LABOR DATA (DAILY WAGES & PRODUCTIVITY):
+        ${JSON.stringify(laborData)}
         
         ${scopeContext}
         
         CRITICAL - CLIENT SPECIFIC GUIDELINES (JOHNSON GUIDELINES):
         ${adminGuidelines}
+        
+        *** CRITICAL RULES & CONSTRAINTS ***
+        0.  **DEFAULT MATERIAL OVERRIDE (CRITICAL)**: The admin has pre-selected the following DEFAULT materials. You MUST use these exact items (Name, Brand, Price) for their respective categories in the estimate, overriding any other generic selections, unless the user explicitly requested a different specific grade.
+            DEFAULT MATERIALS: ${JSON.stringify(defaultMaterials)}
+        1.  **SCOPE ADHERENCE**: The estimate MUST ONLY include items that are explicitly selected in 'details.scopeFlags' and 'details.detailedScope'. If a flag is 'false' (e.g., 'sash: false'), you MUST NOT include any cost for that item. The user's checklist is the ONLY source of truth for the scope.
+        2.  **CALCULATION METHODOLOGY (STRICT)**: You MUST follow the 'calculationMethod' specified in the 'CLIENT PRICE TABLE'.
+            - IF 'area': Multiply 'details.area' by the unit price.
+            - IF 'unit': Multiply the count (e.g., bathroomCount, windowCount, doorCount) by the unit price.
+            - IF 'lump_sum': Use the provided price as a baseline for the entire project, but adjust based on complexity.
+        3.  **MATERIAL-LABOR LINKAGE (COMPOSITE PRICING)**: 
+            - For every material, identify the responsible labor type (Position) using the 'workLink.laborType' in 'CLIENT MATERIAL DB'.
+            - IF a material has 'autoAddMaterials', you MUST include those materials and their associated labor.
+            - For specialized items (Toilets, Sinks, Doors), calculate a "Composite Price" = [Material Cost] + [Specific Installation Labor] + [Incidental Expenses].
+            - Do not just use a flat "Bathroom Remodeling" price. Break it down into: "Material: Toilet", "Labor: Plumber (Installation)", "Material: Flange/Valve", etc.
+        4.  **LABOR COST CALCULATION**: You MUST calculate labor costs based on the provided 'CLIENT LABOR DATA' and the project area ('details.area') OR per-unit installation fees.
+            - Show your calculation logic in the 'remarks' field (e.g., "도배사 3품 * 300,000원" or "양변기 설치비 1식 * 50,000원").
+        5.  **ACCURATE QUANTITIES**: All quantity calculations (물량산출) must be accurate and based on the provided details. Justify calculations in the 'remarks' field if they are complex.
         
         *** PROCESS-TO-MATERIAL MAPPING RULES (STRICT) ***
         You must calculate costs by breaking down the Process into Materials + Labor.
@@ -388,6 +460,14 @@ export const generateProjectPlan = async (
         IF bathroomSpecifics.floorHeating == true:
            - Add "Floor Heating Extension" (난방 배관 연장) to Plumbing/Facilities.
 
+        [Rule 7: Expert-Level Sash (Sash-Only Mode)]
+        IF projectScope == 'sash':
+           - **DETAILED BREAKDOWN**: You MUST list each window location as a separate line item.
+           - **LIFTING & LOGISTICS**: Explicitly add "Lifting Work (양중비)" based on the lifting method.
+           - **REMOVAL**: Add "Sash Removal & Disposal (창호 철거 및 폐기)" if removalWork is 'include'.
+           - **INCIDENTALS**: Add "Foam & Silicone (우레탄폼 및 실리콘 마감)", "Structural Reinforcement (필요시 보강)", "Elevator Protection (보양)".
+           - **GLASS SPECS**: Reflect the specific glass type (Low-E, Triple, etc.) in the material cost and remarks.
+
         GENERAL RULES:
         1. **NO SUMMARIZATION**: Do NOT output "Bathroom Remodeling 1 EA". Break it down.
         2. **SEPARATE MATERIAL & LABOR**: 'materialCost' and 'laborCost' must be distinct.
@@ -427,6 +507,55 @@ export const generateProjectPlan = async (
 };
 
 // ... (Rest of the file remains same: generateMaterialDetails, generateProjectSchedule, generateMasterTemplate, generateProjectPackage, analyzeMarketPrices, analyzeLaborCosts, discoverAndRefreshMaterials) ...
+export const analyzeBasePrices = async (priceTable: UnitPrice[], laborData: any): Promise<PriceSuggestion[]> => {
+    const response = await ai.models.generateContent({
+        model: 'gemini-3-flash-preview',
+        contents: `
+        You are an expert Construction Cost Analyst.
+        
+        TASK: Analyze the provided 'PRICE TABLE' and suggest improvements.
+        
+        GOALS:
+        1. Identify items where 'calculationMethod' is missing or incorrect (e.g., a Toilet should be 'unit', not 'area').
+        2. Suggest 'Composite Pricing' (Material + Labor + Expenses) for complex items.
+        3. Identify items that should be 'Lump Sum' (1식) instead of per-unit.
+        
+        INPUT DATA:
+        - PRICE TABLE: ${JSON.stringify(priceTable)}
+        - LABOR DATA: ${JSON.stringify(laborData)}
+        
+        RULES:
+        - Return a list of 'PriceSuggestion' objects.
+        - For 'UPDATE' suggestions, explain WHY the calculation method or price should change.
+        - Focus on 'Material-Labor Linkage'. If an item is missing associated labor, suggest adding it.
+        
+        Return purely JSON.
+        `,
+        config: {
+            responseMimeType: "application/json",
+            responseSchema: {
+                type: Type.ARRAY,
+                items: {
+                    type: Type.OBJECT,
+                    properties: {
+                        id: { type: Type.STRING },
+                        type: { type: Type.STRING, enum: ['UPDATE', 'NEW'] },
+                        category: { type: Type.STRING },
+                        item: { type: Type.STRING },
+                        unit: { type: Type.STRING },
+                        currentPrice: { type: Type.NUMBER },
+                        suggestedPrice: { type: Type.NUMBER },
+                        reason: { type: Type.STRING },
+                        description: { type: Type.STRING }
+                    }
+                }
+            }
+        }
+    });
+
+    return JSON.parse(response.text);
+};
+
 export const generateMaterialDetails = async (details: ProjectDetails): Promise<{sheet: MaterialDetailItem[], prompts: PromptSet}> => {
     if (details.isDemo) {
         return { 
@@ -483,13 +612,16 @@ export const generateMaterialDetails = async (details: ProjectDetails): Promise<
         }
     };
 
+    const { image, ...detailsForPrompt } = details;
+    const ai = getAI();
+
     const response = await ai.models.generateContent({
-        model: 'gemini-2.5-flash',
+        model: 'gemini-3-flash-preview',
         contents: `
         You are a construction purchasing manager (자재 담당자).
         Generate a **Raw Material BOM (Bill of Materials)** for this project.
         
-        PROJECT CONTEXT: ${JSON.stringify(details)}
+        PROJECT CONTEXT: ${JSON.stringify(detailsForPrompt)}
         
         *** IMPORTANT: CLIENT MATERIAL DATABASE ***
         Use items from this database WHENEVER POSSIBLE. Do not invent new brands if a suitable one exists here.
@@ -551,9 +683,12 @@ export const generateProjectSchedule = async (details: ProjectDetails): Promise<
         }
     };
 
+    const { image, ...detailsForPrompt } = details;
+    const ai = getAI();
+
     const response = await ai.models.generateContent({
-        model: 'gemini-2.5-flash',
-        contents: `Generate a detailed day-by-day or phase-by-phase construction schedule for: ${JSON.stringify(details)}.
+        model: 'gemini-3-flash-preview',
+        contents: `Generate a detailed day-by-day or phase-by-phase construction schedule for: ${JSON.stringify(detailsForPrompt)}.
         Ensure the logic of construction flow is correct (Demolition -> Sash -> Carpentry -> Electrical -> Tile -> Paint -> Floor -> Furniture).
         
         CRITICAL: All text output MUST be in KOREAN (한국어).
@@ -618,8 +753,9 @@ export const generateMasterTemplate = async (details: ProjectDetails, plan: Gene
         }
     };
 
+    const ai = getAI();
     const response = await ai.models.generateContent({
-        model: 'gemini-2.5-flash',
+        model: 'gemini-3-flash-preview',
         contents: `Generate a summary report from this plan: ${JSON.stringify(plan)}. 
         CRITICAL: All text output MUST be in KOREAN (한국어).
         Return pure JSON.`,
@@ -653,11 +789,14 @@ export const generateProjectPackage = async (details: ProjectDetails): Promise<P
          }
      };
 
-     const response = await ai.models.generateContent({
-         model: 'gemini-2.5-flash',
-         contents: `Generate package info for: ${JSON.stringify(details)}. 
-         CRITICAL: All text output MUST be in KOREAN (한국어).
-         Return pure JSON.`,
+    const { image, ...detailsForPrompt } = details;
+    const ai = getAI();
+
+    const response = await ai.models.generateContent({
+        model: 'gemini-3-flash-preview',
+        contents: `Generate package info for: ${JSON.stringify(detailsForPrompt)}. 
+        CRITICAL: All text output MUST be in KOREAN (한국어).
+        Return pure JSON.`,
          config: {
              responseMimeType: "application/json",
              responseSchema: schema
@@ -688,8 +827,10 @@ export const analyzeMarketPrices = async (currentPrices: UnitPrice[]): Promise<P
         }
     };
 
+    const ai = getAI();
+
     const response = await ai.models.generateContent({
-        model: 'gemini-2.5-flash',
+        model: 'gemini-3-flash-preview',
         contents: `
         You are a top-tier construction Quantity Surveyor (QS) in South Korea.
         
@@ -744,8 +885,10 @@ export const analyzeLaborCosts = async (currentLabor: Record<string, number>): P
         }
     };
 
+    const ai = getAI();
+
     const response = await ai.models.generateContent({
-        model: 'gemini-2.5-flash',
+        model: 'gemini-3-flash-preview',
         contents: `
         You are a construction labor market expert in South Korea.
         
@@ -849,8 +992,10 @@ export const discoverAndRefreshMaterials = async (
         `;
     }
 
+    const ai = getAI();
+
     const response = await ai.models.generateContent({
-        model: 'gemini-2.5-flash',
+        model: 'gemini-3-flash-preview',
         contents: `
         You are a construction material sourcing expert for the South Korean market.
         
