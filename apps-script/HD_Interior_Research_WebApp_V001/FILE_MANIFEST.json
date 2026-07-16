@@ -1,0 +1,27 @@
+{
+  "version": "0.1.0",
+  "drive_package_file_id": "1fITWIkTmVyxRDKolvk_-GoVbKwPruZQQ",
+  "database_spreadsheet_id": "1nxPCrUvJ1k6LVvwoCnO3gtbO_faXmgqb7gG4HNjlQ4w",
+  "files": [
+    {"file":"00_Config.gs","sha256":"8efe125749503c4a07a27f3120a9a4f27c4c36835acf5773fb6a75573673e341","bytes":1545},
+    {"file":"01_Util.gs","sha256":"88d8b3e5ced05d7f73052b349edbd17579109cb092c7f6687a3c153da417f153","bytes":6831},
+    {"file":"02_Schema.gs","sha256":"927e2ab36510e16424a444861a83daf908f82768ac7164ceea1340e86636f86f","bytes":10057},
+    {"file":"03_Setup.gs","sha256":"238b144cdca4577465459b59e110da61d69c7d43af54b62575f951bb71f6ce0d","bytes":9230},
+    {"file":"04_ResearchQueue.gs","sha256":"babd20ec3e0c6f7deb844940a8da3e32a990f7ef002bca081cc06ba393d067fe","bytes":5118},
+    {"file":"05_SourceAdapters.gs","sha256":"502b68769289ff76be581d33da14d30283f4e72790bbff4a465caa7c0922f4ea","bytes":7016},
+    {"file":"06_DailyResearch.gs","sha256":"d189e543d2e1527dda305d6c4eddc1800c8adcd7a5d6c5c8c464dbb9fb0b5e68","bytes":2034},
+    {"file":"07_ApartmentResearch.gs","sha256":"00dc837b040c424fe0b508821e84460f608850ca8ee90a55143e1827bd505522","bytes":3034},
+    {"file":"08_MaterialResearch.gs","sha256":"b31badaea222a6cda1e695b933030ef6dd26d50e7b4e19b9f62627bbcd95c5e7","bytes":4400},
+    {"file":"09_TrendQueens.gs","sha256":"d04bc2dfbac44ac4c2b178efd2d5b31aa8642d88cd030b7738d38e3b7dfa15b3","bytes":2133},
+    {"file":"10_EstimateEngine.gs","sha256":"d3592eb630ffca9d4616f1a8f39edfb48324c86ca06d8fa684277618e5f8267c","bytes":5761},
+    {"file":"11_FrontApi.gs","sha256":"a9e42af27d4b1d0baaa82e8fe09e048241435572b7cecac65d7f97a33c360059","bytes":3369},
+    {"file":"12_AgentAudit.gs","sha256":"dc73f8ed09e37e4d87ef5f3f6747113bba3f7dc1e3081221f532ae2bffd94ea6","bytes":4490},
+    {"file":"13_Triggers.gs","sha256":"dcea813f98272c6056a9bcd287158e70eb1acc7297ff6a1bcd9816ce8b5c69bf","bytes":1100},
+    {"file":"14_ContentBridge.gs","sha256":"b1abcdc6077bd7fdceec8bbdd92d200db5abe872188aebbafb22634d089d2de6","bytes":1724},
+    {"file":"15_SketchupBridge.gs","sha256":"9149ea2354a0d6697267bea851081338e72bd38c5d9af7dfe86dcf1f7c71f229","bytes":733},
+    {"file":"99_SelfTest.gs","sha256":"92f51fd6cc0ae9b92f564ed2f170285c318eec0c3fb57426caba301179382538","bytes":1537},
+    {"file":"Index.html","sha256":"d527c8ed2c04eca1a846e061cbf8e30f7667768b0fe7d6fb3c0024d368f0ea11","bytes":3542},
+    {"file":"WebApp.gs","sha256":"4ba7a24e0771b2eaff7f1199cb5fae18817389ae8894b11401a6b23823c4b1c7","bytes":1163},
+    {"file":"appsscript.json","sha256":"536f09be0b3017f08709761d7c15661ac380591e3a8c7d8d35e595e9cc7d8bb9","bytes":193}
+  ]
+}
