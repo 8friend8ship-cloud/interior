@@ -1,6 +1,17 @@
 import React, { useEffect, useState } from 'react';
 import App from './App';
-import { getHomeEstimatePmfContext, PmfContext } from './services/pmfGateService';
+import { buildHomeEstimatePmfPrompt, getHomeEstimatePmfContext, PmfContext } from './services/pmfGateService';
+import { getStoredReferenceGuidelines, saveReferenceGuidelines } from './utils/adminStorage';
+
+const PMF_START = '[PMF_CONTEXT_V1_START]';
+const PMF_END = '[PMF_CONTEXT_V1_END]';
+
+function syncPmfIntoEstimateGuidelines() {
+  const current = getStoredReferenceGuidelines();
+  const withoutOld = current.replace(/\n?\[PMF_CONTEXT_V1_START\][\s\S]*?\[PMF_CONTEXT_V1_END\]\n?/g, '\n');
+  const block = `${PMF_START}\n${buildHomeEstimatePmfPrompt()}\n${PMF_END}`;
+  saveReferenceGuidelines(`${withoutOld.trim()}\n\n${block}`);
+}
 
 const PmfAwareApp: React.FC = () => {
   const [pmf, setPmf] = useState<PmfContext | null>(null);
@@ -13,6 +24,7 @@ const PmfAwareApp: React.FC = () => {
         if (!mounted) return;
         setPmf(context);
         (window as any).__PMF_CONTEXT__ = context;
+        syncPmfIntoEstimateGuidelines();
       })
       .catch(error => {
         if (!mounted) return;
