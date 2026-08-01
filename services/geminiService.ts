@@ -1,5 +1,13 @@
 
-import { GoogleGenAI, Type, Schema } from "@google/genai";
+const Type = {
+    OBJECT: 'OBJECT',
+    ARRAY: 'ARRAY',
+    STRING: 'STRING',
+    NUMBER: 'NUMBER',
+    BOOLEAN: 'BOOLEAN',
+    INTEGER: 'INTEGER'
+} as const;
+type Schema = Record<string, unknown>;
 import { 
     VirtualPlan, 
     GeneratedPlan, 
@@ -23,8 +31,30 @@ import {
 } from '../utils/adminStorage';
 
 const getAI = () => {
-    const apiKey = process.env.GEMINI_API_KEY || process.env.API_KEY || "";
-    return new GoogleGenAI({ apiKey });
+    const coreUrl = String((import.meta as any).env?.VITE_AGENT_CORE_URL || '').replace(/\/$/, '');
+    if (!coreUrl) {
+        throw new Error('중앙 Core가 연결되지 않아 AI 기능을 사용할 수 없습니다.');
+    }
+
+    return {
+        models: {
+            generateContent: async (request: unknown) => {
+                const response = await fetch(`${coreUrl}/api/interior/generate`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'INTERIOR_GENERATE', request })
+                });
+                if (!response.ok) {
+                    throw new Error(`중앙 Core 요청 실패 (${response.status})`);
+                }
+                const envelope = await response.json();
+                if (!envelope?.resultId || !envelope?.auditId || !envelope?.payload) {
+                    throw new Error('중앙 Core 응답에 RESULT_ID/AUDIT_ID가 없습니다.');
+                }
+                return envelope.payload;
+            }
+        }
+    };
 };
 
 const cleanAndParseJSON = (text: string | undefined): any => {
@@ -52,16 +82,13 @@ const getRecentMarketPeriod = (): string => {
     return `${year}년 ${month}월`;
 };
 
-export const validateApiKey = async (apiKey: string): Promise<boolean> => {
+export const validateApiKey = async (_apiKey: string): Promise<boolean> => {
   try {
-    const testAi = new GoogleGenAI({ apiKey: apiKey || process.env.GEMINI_API_KEY || process.env.API_KEY || "" });
-    await testAi.models.generateContent({
-        model: 'gemini-3-flash-preview',
-        contents: 'test',
-    });
-    return true;
-  } catch (e) {
-    console.error("API Key Validation Error:", e);
+    const coreUrl = String((import.meta as any).env?.VITE_AGENT_CORE_URL || '').replace(/\/$/, '');
+    if (!coreUrl) return false;
+    const response = await fetch(`${coreUrl}/api/health`, { method: 'GET' });
+    return response.ok;
+  } catch {
     return false;
   }
 };
@@ -85,7 +112,14 @@ export const createVirtualPlanFromDimensions = (width: number, depth: number, ro
 };
 
 export const analyzeFloorplan = async (image: { data: string; mimeType: string }, isDemo: boolean = false): Promise<VirtualPlan> => {
-    if (isDemo) return MOCK_VIRTUAL_PLAN;
+    if (isDemo) return {
+      ...MOCK_VIRTUAL_PLAN,
+      sourceMetadata: {
+          sourceType: 'DEMO_SAMPLE',
+          confidence: 'LOW',
+          fallbackReason: '사용자가 명시적으로 데모 모드를 선택했습니다.'
+      }
+  };
 
     const schema: Schema = {
         type: Type.OBJECT,
@@ -134,8 +168,8 @@ export const analyzeFloorplan = async (image: { data: string; mimeType: string }
             windows: []
         };
     } catch (e) {
-        console.warn("Floorplan analysis failed, using fallback.", e);
-        return MOCK_VIRTUAL_PLAN;
+        console.error("Floorplan analysis failed.", e);
+        throw new Error('도면 분석에 실패했습니다. 실제 치수를 입력하거나 잠시 후 다시 시도해주세요.');
     }
 };
 
@@ -166,7 +200,7 @@ export const generateVisualizations = async (
             config: { imageConfig: { aspectRatio: "4:3" } }
         });
         
-        let isoData = MOCK_IMAGE_BASE64;
+        let isoData = '';
         let isoMime = "image/png";
         if (isoRes.candidates?.[0]?.content?.parts) {
             for (const p of isoRes.candidates[0].content.parts) {
@@ -175,6 +209,8 @@ export const generateVisualizations = async (
                 }
             }
         }
+
+        if (!isoData) throw new Error('아이소메트릭 이미지 결과가 비어 있습니다.');
 
         const persRes = await ai.models.generateContent({
             model: 'gemini-2.5-flash-image',
@@ -187,23 +223,21 @@ export const generateVisualizations = async (
             config: { imageConfig: { aspectRatio: "16:9" } }
         });
 
-        let persData = MOCK_IMAGE_BASE64;
+        let persData = '';
         if (persRes.candidates?.[0]?.content?.parts) {
             for (const p of persRes.candidates[0].content.parts) {
                 if (p.inlineData) persData = p.inlineData.data;
             }
         }
 
+        if (!persData) throw new Error('투시도 이미지 결과가 비어 있습니다.');
         return {
             isometricView: { data: isoData, mimeType: isoMime },
             perspectiveView: { data: persData, mimeType: "image/png" }
         };
     } catch (e) {
         console.error("Image gen failed", e);
-        return {
-            isometricView: { data: MOCK_IMAGE_BASE64, mimeType: "image/gif" },
-            perspectiveView: { data: MOCK_IMAGE_BASE64, mimeType: "image/gif" }
-        };
+        throw new Error('3D 이미지 생성에 실패했습니다. 대체 이미지는 표시하지 않습니다.');
     }
 };
 
@@ -247,7 +281,15 @@ export const generateProjectPlan = async (
     isRefinement: boolean = false
 ): Promise<GeneratedPlan> => {
      if (details.isDemo) {
-         return details.projectScope === 'bathroom' ? MOCK_BATHROOM_PLAN : MOCK_GENERATED_PLAN;
+         const demoPlan = details.projectScope === 'bathroom' ? MOCK_BATHROOM_PLAN : MOCK_GENERATED_PLAN;
+         return {
+             ...demoPlan,
+             sourceMetadata: {
+                 sourceType: 'DEMO_SAMPLE',
+                 confidence: 'LOW',
+                 fallbackReason: '사용자가 명시적으로 데모 모드를 선택했습니다.'
+             }
+         };
      }
 
     const flags = details.scopeFlags;
