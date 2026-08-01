@@ -45,6 +45,16 @@ export interface Room {
   area: number;
 }
 
+export type ResultSourceType = 'CUSTOMER_DIMENSIONS' | 'CORE_AI' | 'DEMO_SAMPLE' | 'UNAVAILABLE';
+
+export interface ResultSourceMetadata {
+  sourceType: ResultSourceType;
+  confidence: 'HIGH' | 'MEDIUM' | 'LOW';
+  fallbackReason: string | null;
+  resultId?: string;
+  auditId?: string;
+}
+
 export interface VirtualPlan {
   rooms: Room[];
   walls: Wall[];
@@ -53,6 +63,7 @@ export interface VirtualPlan {
   units: 'meters';
   totalFloorArea: number;
   totalWallLength: number;
+  sourceMetadata?: ResultSourceMetadata;
 }
 
 // Detailed Bathroom Specifications (Enhanced)
@@ -474,6 +485,7 @@ export interface GeneratedPlan {
   confidence: 'HIGH' | 'MEDIUM' | 'LOW';
   confidenceReason: string;
   correctionNeeded: string;
+  sourceMetadata?: ResultSourceMetadata;
 }
 
 export interface Material {
