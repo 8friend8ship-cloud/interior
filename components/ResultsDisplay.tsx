@@ -296,6 +296,16 @@ export const ResultsDisplay: React.FC<ResultsDisplayProps> = ({
         </div>
       </div>
 
+      {plan.sourceMetadata && (
+        <div className="mt-4 rounded-xl border border-blue-200 bg-blue-50 p-4 text-sm text-blue-900">
+          <strong>결과 출처: {plan.sourceMetadata.sourceType}</strong>
+          <span className="ml-3">신뢰도: {plan.sourceMetadata.confidence}</span>
+          {plan.sourceMetadata.fallbackReason && (
+            <p className="mt-1 text-xs">{plan.sourceMetadata.fallbackReason}</p>
+          )}
+        </div>
+      )}
+
       {/* 2. Scrollable Content Area */}
       <div className="min-h-[600px] mt-2">
           {renderTabContent()}
