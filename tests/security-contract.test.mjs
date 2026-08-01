@@ -14,6 +14,7 @@ test('browser bundle does not receive Gemini secrets', () => {
 });
 test('browser AI SDK dependency is removed', () => {
   assert.equal(pkg.dependencies['@google/genai'], undefined);
+  assert.equal(pkg.dependencies.xlsx, undefined);
   assert.doesNotMatch(service, /GoogleGenAI|@google\/genai/);
 });
 test('all AI requests use the central audited endpoint', () => {
