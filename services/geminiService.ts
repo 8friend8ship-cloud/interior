@@ -11,7 +11,8 @@ type Schema = Record<string, unknown>;
 import { 
     VirtualPlan, 
     GeneratedPlan, 
-    ProjectDetails, 
+    ProjectDetails,
+    ProjectScope,
     MaterialDetailItem, 
     PromptSet, 
     ProjectPackage, 
@@ -550,6 +551,7 @@ export const generateProjectPlan = async (
 
 // ... (Rest of the file remains same: generateMaterialDetails, generateProjectSchedule, generateMasterTemplate, generateProjectPackage, analyzeMarketPrices, analyzeLaborCosts, discoverAndRefreshMaterials) ...
 export const analyzeBasePrices = async (priceTable: UnitPrice[], laborData: any): Promise<PriceSuggestion[]> => {
+    const ai = getAI();
     const response = await ai.models.generateContent({
         model: 'gemini-3-flash-preview',
         contents: `
