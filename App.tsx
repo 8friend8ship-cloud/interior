@@ -57,25 +57,24 @@ const App: React.FC = () => {
             details.bathroomSpecifics.depth) {
             
             // Skip AI analysis and create a virtual plan from dimensions directly
-            virtualPlan = createVirtualPlanFromDimensions(
-                details.bathroomSpecifics.width, 
-                details.bathroomSpecifics.depth,
-                'BATHROOM'
-            );
+            virtualPlan = {
+                ...createVirtualPlanFromDimensions(
+                    details.bathroomSpecifics.width,
+                    details.bathroomSpecifics.depth,
+                    'BATHROOM'
+                ),
+                sourceMetadata: {
+                    sourceType: 'CUSTOMER_DIMENSIONS',
+                    confidence: 'HIGH',
+                    fallbackReason: null
+                }
+            };
             // Artificial delay to mimic processing feel if desired, or just proceed immediately
             if (isDemo) await new Promise(resolve => setTimeout(resolve, 1500)); 
 
         } else {
             // Standard AI Analysis from Image
-            try {
-                virtualPlan = await analyzeFloorplan(details.image, isDemo);
-            } catch (analysisError) {
-                console.warn("AI Floorplan Analysis failed, falling back to area-based estimation.", analysisError);
-                const areaM2 = details.area * 3.3058;
-                const side = Math.sqrt(areaM2);
-                const roomType = details.projectScope === 'bathroom' ? 'BATHROOM' : 'LIVING_ROOM';
-                virtualPlan = createVirtualPlanFromDimensions(side, side, roomType);
-            }
+            virtualPlan = await analyzeFloorplan(details.image, isDemo);
         }
 
         const detailsWithPlan = { ...details, virtualPlan };
