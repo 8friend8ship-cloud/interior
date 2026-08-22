@@ -1,0 +1,15 @@
+{
+  "version": "FRONT_REQUIREMENT_REVERSE_FACTORY_V1_20260823",
+  "appIds": ["APP_INTERIOR"],
+  "controlTargetId": "FPC_INTERIOR_20260823",
+  "cycleMinutes": 10,
+  "dailyTargets": {"queens": 600, "seed": 80, "t1": 40, "t2": 20, "assets": 100},
+  "apiAbWindowsKst": [9, 13, 17, 21],
+  "reverseRequirement": ["area", "plan", "budget", "materials", "process", "defect", "estimate", "scene", "style", "region"],
+  "pipeline": ["FRONT_REQUIREMENT_REVERSE", "QUEENS_MATERIAL_PROCESS_TREND", "SEED_BOM_ASSET_PROCESS", "T1_TAKEOFF_ESTIMATE_SCENE", "T2_SITE_BUDGET_STYLE_DELTA", "FRONT_READBACK", "ASSET_PLATFORM_POINTER", "CENTRAL_REINGEST"],
+  "qualityGate": {"quantityPriceFormulaLineage": 1.0, "assetLineage": 1.0, "fabricatedNumbers": 0, "runtimeReadbackCount": 2},
+  "apiPromotionRule": {"priceMaterialFreshnessOrRenderQualityGapAllowed": true, "qualityGainPoints": 8, "coverageGain": 0.15, "writeBackWinningPatterns": true},
+  "storage": {"bomAndT2": "COMPACT_JSON", "assetManifest": "URL_ID_HASH_RIGHTS", "longEstimateReport": "DRIVE_OR_BLOGGER_CANONICAL_URL"},
+  "physicalTriggerPolicy": "REUSE_EXISTING_APP_INTERIOR_FACTORY_TRIGGER_NO_DUPLICATE",
+  "approvalBoundary": ["NEW_OAUTH", "NEW_PAID_API_OR_SERVICE", "PUBLIC_PRODUCTION_OR_PUBLISH", "PAYMENT", "DESTRUCTIVE_DELETE"]
+}
