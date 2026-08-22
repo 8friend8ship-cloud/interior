@@ -1,0 +1,7 @@
+{
+  "appId": "APP_INTERIOR",
+  "writerT1Template": "PTPL-PAUL-EXPERT-V1",
+  "t2Template": "T2_INTERIOR_ESTIMATE_RENDER_V2",
+  "requiredOutputs": ["measurements","material_specs","unit_rates","bom","labor","schedule","exclusions","evidence","uncertainty"],
+  "runtimeStatus": "BOUND_SYNC_X2_PENDING"
+}
