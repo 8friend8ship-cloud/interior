@@ -1,0 +1,62 @@
+{
+  "version": "INTERIOR_STANDARD_COVERAGE_BASELINE_20260825",
+  "basis": "Current repository legacy MATERIAL/LABOR samples + central coverage policy. Unverified fields are treated as missing. This is not a live Queens result.",
+  "policy": {
+    "legacyManualSamplesAreReferenceOnly": true,
+    "staleOrUnknownPriceEvidenceBlocksFreeStandard": true,
+    "missingPriceSourceBlocksFreeStandard": true,
+    "missingProductOrReferenceLinkBlocksFreeStandard": true,
+    "unknownCoverageIsGap": true
+  },
+  "overall": {
+    "status": "QUEENS_GAP",
+    "canGenerateFreeStandardEstimate": false,
+    "reason": "Current public backdata is not yet proven complete/current for every supported trade. Legacy rows commonly lack source/link evidence and are not a complete all-material/all-labor/all-expense catalog."
+  },
+  "globalGaps": [
+    "CURRENT_PRICE_EVIDENCE",
+    "PRICE_SOURCE",
+    "PRODUCT_OR_REFERENCE_LINK",
+    "COMPLETE_SUB_MATERIAL_RELATION",
+    "COMPLETE_INSTALL_CONSUMABLE_RELATION",
+    "TRADE_SCOPED_LABOR_PRODUCTIVITY",
+    "TRADE_SCOPED_LOGISTICS_LIFTING",
+    "TRADE_SCOPED_WASTE_DISPOSAL",
+    "SITE_EXPENSE_RULES"
+  ],
+  "supportedTrades": [
+    "TEMP_PROTECTION",
+    "DEMOLITION",
+    "WINDOW_SASH",
+    "CARPENTRY",
+    "DOOR_TRIM",
+    "ELECTRICAL_LIGHTING",
+    "PLUMBING_HEATING",
+    "WATERPROOFING",
+    "TILE",
+    "BATH_FIXTURE",
+    "PAINT",
+    "FILM",
+    "WALLPAPER",
+    "FLOORING",
+    "FURNITURE_KITCHEN",
+    "HVAC_APPLIANCE",
+    "CLEANING"
+  ],
+  "queensGapRequest": {
+    "queue": "QUEENS_STANDARD_BACKDATA_GAP",
+    "requiredOutputPerTrade": [
+      "PRIMARY_MATERIAL",
+      "SUB_MATERIAL",
+      "INSTALL_CONSUMABLE",
+      "LABOR",
+      "LOGISTICS_OR_LIFTING",
+      "WASTE_OR_DISPOSAL",
+      "SITE_EXPENSE",
+      "PRICE_AS_OF",
+      "PRICE_SOURCE",
+      "PRODUCT_OR_REFERENCE_LINK"
+    ],
+    "promotion": "Only rows with evidence and complete relationships may promote to Seed and become eligible for FREE_STANDARD."
+  }
+}
