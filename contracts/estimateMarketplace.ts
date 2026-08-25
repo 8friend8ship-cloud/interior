@@ -3,6 +3,21 @@ export type EstimatePlanTier = 'FREE' | 'PRO';
 export type ConsumerQuoteMode = 'SIMPLE' | 'COMPARE' | 'TENDER';
 export type SupplierMode = 'REGISTER_BID' | 'AUTOMATION' | 'PLATFORM';
 export type TemplateScope = 'GENERAL' | 'PROJECT' | 'USER';
+export type EstimateProjectDomain =
+  | 'RESIDENTIAL_INTERIOR'
+  | 'COMMERCIAL_INTERIOR'
+  | 'ARCHITECTURE_BUILD'
+  | 'RENOVATION_REMODEL';
+export type EstimateBuildingUse =
+  | 'RESIDENTIAL'
+  | 'OFFICE'
+  | 'RETAIL'
+  | 'FNB'
+  | 'MEDICAL'
+  | 'EDUCATION'
+  | 'HOSPITALITY'
+  | 'WAREHOUSE'
+  | 'OTHER';
 export type EstimateTemplateMode =
   | 'GENOVY_DETAIL'
   | 'HOMEDESIGN_SIMPLE'
@@ -13,6 +28,8 @@ export type EstimateTemplateMode =
 export interface EstimateMarketplaceContext {
   userRole: EstimateUserRole;
   tier: EstimatePlanTier;
+  projectDomain?: EstimateProjectDomain;
+  buildingUse?: EstimateBuildingUse;
   consumerMode?: ConsumerQuoteMode;
   supplierMode?: SupplierMode;
   providerId?: string;
@@ -78,6 +95,8 @@ export interface TemplateLineage {
 export const DEFAULT_MARKETPLACE_CONTEXT: EstimateMarketplaceContext = {
   userRole: 'CONSUMER',
   tier: 'FREE',
+  projectDomain: 'RESIDENTIAL_INTERIOR',
+  buildingUse: 'RESIDENTIAL',
   consumerMode: 'SIMPLE',
   templateMode: 'HOMEDESIGN_SIMPLE',
   templateScope: 'GENERAL',
