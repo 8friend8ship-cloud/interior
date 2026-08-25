@@ -8,7 +8,6 @@ import { AdSenseLoadingOverlay } from './components/AdSenseLoadingOverlay';
 import { AdminPanel } from './components/AdminPanel';
 import { DesignStudio } from './components/DesignStudio';
 import { EstimateMarketplaceMode } from './components/EstimateMarketplaceMode';
-import { ProjectDomainMode } from './components/ProjectDomainMode';
 import { EstimateTemplateSummary } from './components/EstimateTemplateSummary';
 import { ConnectedEstimateDetails } from './components/ConnectedEstimateDetails';
 import {
@@ -24,6 +23,7 @@ import {
     fetchInteriorEstimateBundle,
     fetchInteriorMaterials,
     fetchInteriorRender,
+    fetchInteriorSchedule,
     mergeBridgeEstimate,
     extractBridgeMaterials,
     extractBridgeRender,
@@ -196,10 +196,21 @@ const App: React.FC = () => {
   };
 
   const handleLoadSchedule = async () => {
-      if (!generatedPlan) return;
+      if (!projectDetails || !generatedPlan) return;
       setLoadingSection('schedule');
-      setGeneratedPlan(prev => prev ? { ...prev, projectSchedule: prev.projectSchedule || [] } : null);
-      setLoadingSection(null);
+      try {
+          const bridgeSchedule = await fetchInteriorSchedule(projectDetails, marketplaceContext);
+          setBridgeStatus(bridgeSchedule);
+          const value = bridgeSchedule.data?.data ?? bridgeSchedule.data ?? {};
+          const schedule = value.projectSchedule || value.schedule || value.items || value.result || [];
+          if (bridgeSchedule.ok && Array.isArray(schedule) && schedule.length > 0) {
+              setGeneratedPlan(prev => prev ? { ...prev, projectSchedule: schedule } : null);
+          }
+      } catch (e) {
+          console.warn('Schedule bridge unavailable', e);
+      } finally {
+          setLoadingSection(null);
+      }
   };
 
   const handleLoadPackage = async () => {
@@ -247,7 +258,6 @@ const App: React.FC = () => {
         return (
           <>
             <EstimateMarketplaceMode value={marketplaceContext} onChange={handleMarketplaceChange} />
-            <ProjectDomainMode value={marketplaceContext} onChange={handleMarketplaceChange} />
             <UserInputForm onSubmit={handleInitialSubmit} error={error} />
           </>
         );
@@ -309,7 +319,6 @@ const App: React.FC = () => {
         return (
           <>
             <EstimateMarketplaceMode value={marketplaceContext} onChange={handleMarketplaceChange} />
-            <ProjectDomainMode value={marketplaceContext} onChange={handleMarketplaceChange} />
             <UserInputForm onSubmit={handleInitialSubmit} error={error} />
           </>
         );
