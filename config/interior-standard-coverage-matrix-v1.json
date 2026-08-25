@@ -1,0 +1,50 @@
+{
+  "version": "INTERIOR_STANDARD_COVERAGE_V1_20260825",
+  "rule": "FREE_STANDARD must be complete without Johnson profile. Missing required coverage is QUEENS_GAP and blocks priced Standard output for that trade.",
+  "requiredCoveragePerTrade": [
+    "PRIMARY_MATERIAL",
+    "SUB_MATERIAL",
+    "INSTALL_CONSUMABLE",
+    "LABOR",
+    "LOGISTICS_OR_LIFTING",
+    "WASTE_OR_DISPOSAL",
+    "PRICE_AS_OF",
+    "PRICE_SOURCE",
+    "PRODUCT_OR_REFERENCE_LINK"
+  ],
+  "supportedTrades": {
+    "COMMON_TEMPORARY": ["protection", "lifting", "site access", "temporary work", "cleaning"],
+    "DEMOLITION": ["demolition consumables", "bags", "cutting/tool consumables", "waste", "labor"],
+    "WINDOW_SASH": ["window/frame/glass", "foam", "sealant", "hardware", "lifting", "removal/disposal", "installation labor"],
+    "CARPENTRY": ["board", "timber/stud/runner", "insulation", "foam", "adhesive", "screw/fastener", "profile", "consumables", "labor"],
+    "DOOR": ["door/frame", "hardware", "foam", "sealant", "fastener", "installation labor"],
+    "ELECTRICAL_LIGHTING": ["fixture/device", "wire/cable", "conduit", "box", "connector", "breaker", "fastener", "consumables", "electrician labor"],
+    "PLUMBING_HEATING": ["pipe/fitting", "valve", "insulation", "mortar/fill", "fastener", "sealant", "testing consumables", "plumber labor"],
+    "WATERPROOFING": ["waterproof material", "primer", "mesh/tape", "sealant", "protection", "labor"],
+    "TILE": ["tile", "adhesive", "mortar", "grout", "waterproof-related", "profile/corner", "spacer", "sealant", "cutting consumables", "tiler labor"],
+    "BATHROOM_FIXTURE": ["toilet/basin/faucet/shower", "trap/drain", "hose/valve", "silicone", "anchor/fastener", "cabinet/mirror/accessory", "installation labor"],
+    "PAINT": ["paint", "primer", "putty", "tape", "covering/protection", "roller/brush consumables", "labor"],
+    "FILM": ["film", "primer", "adhesive", "putty", "sandpaper", "knife/blade consumables", "labor"],
+    "WALLPAPER": ["wallpaper", "paste/adhesive", "lining/nonwoven", "joint/repair material", "protection", "consumables", "labor"],
+    "FLOORING": ["floor finish", "adhesive", "primer", "leveling material", "transition/profile", "protection", "consumables", "labor"],
+    "FURNITURE_KITCHEN": ["cabinet/panel", "hardware", "countertop", "sink", "faucet", "sealant", "fastener", "installation labor"],
+    "APPLIANCE_HVAC": ["equipment", "pipe/cable/drain", "bracket", "insulation", "consumables", "installation labor", "lifting"],
+    "FINAL_CLEANING": ["cleaning material", "waste bag", "equipment", "labor"]
+  },
+  "expenseCoverage": [
+    "LIFTING",
+    "DELIVERY",
+    "WASTE_DISPOSAL",
+    "PARKING_ACCESS",
+    "SITE_PROTECTION",
+    "EQUIPMENT_RENTAL",
+    "FINAL_CLEANING",
+    "MANAGEMENT_FEE_WHEN_APPLICABLE"
+  ],
+  "gapAction": {
+    "status": "QUEENS_GAP",
+    "enqueue": "QUEENS_STANDARD_BACKDATA_GAP",
+    "minimumEvidence": ["PRICE_AS_OF", "PRICE_SOURCE", "UNIT", "REGION_OR_SCOPE", "QA_STATUS"],
+    "promotion": "Seed only after source/era/scope validation"
+  }
+}
