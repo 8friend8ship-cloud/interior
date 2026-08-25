@@ -8,6 +8,7 @@ import { AdSenseLoadingOverlay } from './components/AdSenseLoadingOverlay';
 import { AdminPanel } from './components/AdminPanel';
 import { DesignStudio } from './components/DesignStudio';
 import { EstimateMarketplaceMode } from './components/EstimateMarketplaceMode';
+import { ProjectDomainMode } from './components/ProjectDomainMode';
 import { EstimateTemplateSummary } from './components/EstimateTemplateSummary';
 import { ConnectedEstimateDetails } from './components/ConnectedEstimateDetails';
 import {
@@ -246,6 +247,7 @@ const App: React.FC = () => {
         return (
           <>
             <EstimateMarketplaceMode value={marketplaceContext} onChange={handleMarketplaceChange} />
+            <ProjectDomainMode value={marketplaceContext} onChange={handleMarketplaceChange} />
             <UserInputForm onSubmit={handleInitialSubmit} error={error} />
           </>
         );
@@ -253,7 +255,7 @@ const App: React.FC = () => {
         return (
           <AdSenseLoadingOverlay
             message={isBathroomMode ? '욕실 치수·물량 준비 중...' : '면적·선택 공종 기준 물량 준비 중...'}
-            subMessage="백데이터 브릿지와 저장 템플릿을 우선 조회하고, 실패 시 결정형 견적으로 안전하게 계속합니다."
+            subMessage={`${marketplaceContext.projectDomain || 'RESIDENTIAL_INTERIOR'} 전용 백데이터와 공종 coverage를 우선 확인합니다. 부족한 항목은 다른 도메인 단가로 대체하지 않습니다.`}
           />
         );
       case AppState.GENERATING_VIEWS:
@@ -283,7 +285,7 @@ const App: React.FC = () => {
         return (
            <AdSenseLoadingOverlay
             message="최종 상세견적 산출 중..."
-            subMessage="Queens/Seed/T1/T2 백데이터 응답을 우선 병합하고 자재비·인건비·BOM·공정 근거를 함께 구성합니다."
+            subMessage="선택한 프로젝트 도메인의 Queens/Seed/T1/T2 백데이터를 우선 병합하고 자재·인건비·경비·BOM·공정 근거를 함께 구성합니다."
           />
         );
       case AppState.RESULTS:
@@ -307,6 +309,7 @@ const App: React.FC = () => {
         return (
           <>
             <EstimateMarketplaceMode value={marketplaceContext} onChange={handleMarketplaceChange} />
+            <ProjectDomainMode value={marketplaceContext} onChange={handleMarketplaceChange} />
             <UserInputForm onSubmit={handleInitialSubmit} error={error} />
           </>
         );
