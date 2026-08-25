@@ -8,6 +8,7 @@ import { AdSenseLoadingOverlay } from './components/AdSenseLoadingOverlay';
 import { AdminPanel } from './components/AdminPanel';
 import { DesignStudio } from './components/DesignStudio';
 import { EstimateMarketplaceMode } from './components/EstimateMarketplaceMode';
+import { EstimateTemplateSummary } from './components/EstimateTemplateSummary';
 import {
     generateVisualizations,
     generateMasterTemplate,
@@ -254,16 +255,19 @@ const App: React.FC = () => {
         );
       case AppState.RESULTS:
         return generatedPlan && projectDetails && (
-          <ResultsDisplay
-            plan={generatedPlan}
-            details={projectDetails}
-            onReset={handleReset}
-            onLoadMasterTemplate={handleLoadMasterTemplate}
-            onLoadMaterials={handleLoadMaterials}
-            onLoadSchedule={handleLoadSchedule}
-            onLoadPackage={handleLoadPackage}
-            loadingSection={loadingSection}
-          />
+          <>
+            <EstimateTemplateSummary context={marketplaceContext} />
+            <ResultsDisplay
+              plan={generatedPlan}
+              details={projectDetails}
+              onReset={handleReset}
+              onLoadMasterTemplate={handleLoadMasterTemplate}
+              onLoadMaterials={handleLoadMaterials}
+              onLoadSchedule={handleLoadSchedule}
+              onLoadPackage={handleLoadPackage}
+              loadingSection={loadingSection}
+            />
+          </>
         );
       default:
         return (
