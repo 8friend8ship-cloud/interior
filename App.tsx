@@ -13,7 +13,6 @@ import { ConnectedEstimateDetails } from './components/ConnectedEstimateDetails'
 import {
     generateVisualizations,
     generateMasterTemplate,
-    generateMaterialDetails,
     generateProjectPackage,
     createVirtualPlanFromDimensions
 } from './services/geminiService';
@@ -185,11 +184,11 @@ const App: React.FC = () => {
           if (connectedMaterials.length > 0) {
             setGeneratedPlan(prev => prev ? { ...prev, materialDetailSheet: connectedMaterials } : null);
           } else {
-            const { sheet, prompts } = await generateMaterialDetails({ ...projectDetails, isDemo: projectDetails.isDemo === true });
-            setGeneratedPlan(prev => prev ? { ...prev, materialDetailSheet: sheet, materialBoardPrompts: prompts } : null);
+            setError('검증된 공용 자재 백데이터가 부족합니다. 임의 AI 자재를 생성하지 않고 Queens 보충 대상으로 유지합니다.');
           }
       } catch (e) {
-          console.warn('Material bridge/enrichment unavailable', e);
+          setError('자재 백데이터 브릿지 연결을 확인할 수 없습니다. 검증되지 않은 자재 목록은 생성하지 않습니다.');
+          console.warn('Material bridge unavailable', e);
       } finally {
           setLoadingSection(null);
       }
