@@ -1,7 +1,9 @@
 import React from 'react';
 import {
+  EstimateBuildingUse,
   EstimateMarketplaceContext,
   EstimatePlanTier,
+  EstimateProjectDomain,
   EstimateTemplateMode,
   EstimateUserRole,
 } from '../contracts/estimateMarketplace';
@@ -22,6 +24,50 @@ const roleCopy: Record<EstimateUserRole, { title: string; description: string }>
     description: '업체 등록·입찰 참가부터 자동견적·전용 앱까지',
   },
 };
+
+const domainOptions: Array<{
+  value: EstimateProjectDomain;
+  title: string;
+  description: string;
+  defaultUse: EstimateBuildingUse;
+}> = [
+  {
+    value: 'RESIDENTIAL_INTERIOR',
+    title: '주거 인테리어',
+    description: '아파트 · 주택 · 빌라 · 오피스텔 내부공사',
+    defaultUse: 'RESIDENTIAL',
+  },
+  {
+    value: 'COMMERCIAL_INTERIOR',
+    title: '상업 인테리어',
+    description: '사무실 · 매장 · F&B · 의료 · 교육 · 숙박 등',
+    defaultUse: 'RETAIL',
+  },
+  {
+    value: 'ARCHITECTURE_BUILD',
+    title: '건축 · 신축',
+    description: '가설 · 토공 · 구조 · 외장 · MEP · 소방 · 외부공사까지',
+    defaultUse: 'RESIDENTIAL',
+  },
+  {
+    value: 'RENOVATION_REMODEL',
+    title: '리모델링 · 대수선',
+    description: '선택철거 · 구조보강 · 외피 · 설비이설 · 적합성 개선',
+    defaultUse: 'RESIDENTIAL',
+  },
+];
+
+const buildingUseOptions: Array<{ value: EstimateBuildingUse; label: string }> = [
+  { value: 'RESIDENTIAL', label: '주거' },
+  { value: 'OFFICE', label: '사무실' },
+  { value: 'RETAIL', label: '매장' },
+  { value: 'FNB', label: 'F&B / 음식점' },
+  { value: 'MEDICAL', label: '의료' },
+  { value: 'EDUCATION', label: '교육' },
+  { value: 'HOSPITALITY', label: '숙박' },
+  { value: 'WAREHOUSE', label: '창고 · 물류' },
+  { value: 'OTHER', label: '기타' },
+];
 
 const templateOptions: Array<{
   mode: EstimateTemplateMode;
@@ -98,6 +144,19 @@ export const EstimateMarketplaceMode: React.FC<EstimateMarketplaceModeProps> = (
     );
   };
 
+  const setDomain = (projectDomain: EstimateProjectDomain) => {
+    const option = domainOptions.find((item) => item.value === projectDomain);
+    onChange({
+      ...value,
+      projectDomain,
+      buildingUse: option?.defaultUse || value.buildingUse || 'OTHER',
+    });
+  };
+
+  const setBuildingUse = (buildingUse: EstimateBuildingUse) => {
+    onChange({ ...value, buildingUse });
+  };
+
   const setTier = (tier: EstimatePlanTier) => {
     const next = normalizeRoleTier(value.userRole, tier, value);
     if (tier === 'FREE') {
@@ -135,7 +194,7 @@ export const EstimateMarketplaceMode: React.FC<EstimateMarketplaceModeProps> = (
     <section className="mb-6 rounded-2xl border border-indigo-100 bg-white p-5 shadow-sm">
       <div className="mb-4">
         <p className="text-xs font-semibold uppercase tracking-wide text-indigo-500">견적 이용 방식</p>
-        <h2 className="mt-1 text-xl font-bold text-gray-900">먼저 이용 목적을 선택하세요</h2>
+        <h2 className="mt-1 text-xl font-bold text-gray-900">먼저 이용 목적과 프로젝트 종류를 선택하세요</h2>
       </div>
 
       <div className="grid gap-3 md:grid-cols-2">
@@ -153,6 +212,46 @@ export const EstimateMarketplaceMode: React.FC<EstimateMarketplaceModeProps> = (
             </button>
           );
         })}
+      </div>
+
+      <div className="mt-5 border-t border-gray-100 pt-5">
+        <p className="text-xs font-semibold uppercase tracking-wide text-indigo-500">프로젝트 종류</p>
+        <div className="mt-3 grid gap-3 md:grid-cols-2">
+          {domainOptions.map((option) => {
+            const active = (value.projectDomain || 'RESIDENTIAL_INTERIOR') === option.value;
+            return (
+              <button
+                key={option.value}
+                type="button"
+                onClick={() => setDomain(option.value)}
+                className={`rounded-xl border p-4 text-left transition ${active ? 'border-indigo-500 bg-indigo-50' : 'border-gray-200 hover:border-indigo-200'}`}
+              >
+                <div className="font-semibold text-gray-900">{option.title}</div>
+                <div className="mt-1 text-sm text-gray-500">{option.description}</div>
+              </button>
+            );
+          })}
+        </div>
+
+        <label className="mt-4 block text-sm font-semibold text-gray-800" htmlFor="estimate-building-use">
+          건물 · 영업 용도
+        </label>
+        <select
+          id="estimate-building-use"
+          value={value.buildingUse || 'RESIDENTIAL'}
+          onChange={(event) => setBuildingUse(event.target.value as EstimateBuildingUse)}
+          className="mt-2 w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-800 outline-none transition focus:border-indigo-400"
+        >
+          {buildingUseOptions.map((option) => (
+            <option key={option.value} value={option.value}>{option.label}</option>
+          ))}
+        </select>
+
+        {value.projectDomain && value.projectDomain !== 'RESIDENTIAL_INTERIOR' && (
+          <div className="mt-3 rounded-xl bg-amber-50 px-4 py-3 text-xs text-amber-800">
+            상업·건축·대수선은 주거 인테리어 단가를 자동 대입하지 않습니다. 검증된 도메인별 자재·노무·경비·가격시점 근거가 없는 항목은 미확정으로 유지합니다.
+          </div>
+        )}
       </div>
 
       <div className="mt-4 flex gap-2">
