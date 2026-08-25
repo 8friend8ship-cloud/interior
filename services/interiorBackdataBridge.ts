@@ -34,12 +34,20 @@ const unwrap = (result: InteriorBridgeResult) => {
   return value || {};
 };
 
+const domainPayload = (context: EstimateMarketplaceContext) => ({
+  projectDomain: context.projectDomain || 'RESIDENTIAL_INTERIOR',
+  buildingUse: context.buildingUse || 'RESIDENTIAL',
+  domainPricingIsolation: true,
+  coverageGateRequired: true,
+});
+
 export const fetchInteriorHealth = () => callBridge('health', {});
 
 export const fetchInteriorEstimateBundle = (details: ProjectDetails, context: EstimateMarketplaceContext) =>
   callBridge('estimate', {
     project: details,
     context,
+    ...domainPayload(context),
     templateMode: context.templateMode,
     templateVersion: context.templateVersion,
     projectId: context.projectId,
@@ -47,10 +55,16 @@ export const fetchInteriorEstimateBundle = (details: ProjectDetails, context: Es
   });
 
 export const fetchInteriorMaterials = (details: ProjectDetails, context: EstimateMarketplaceContext) =>
-  callBridge('materials', { project: details, context });
+  callBridge('materials', { project: details, context, ...domainPayload(context) });
+
+export const fetchInteriorLabor = (details: ProjectDetails, context: EstimateMarketplaceContext) =>
+  callBridge('labor', { project: details, context, ...domainPayload(context) });
+
+export const fetchInteriorSchedule = (details: ProjectDetails, context: EstimateMarketplaceContext) =>
+  callBridge('schedule', { project: details, context, ...domainPayload(context) });
 
 export const fetchInteriorRender = (details: ProjectDetails, context: EstimateMarketplaceContext) =>
-  callBridge('render', { project: details, context });
+  callBridge('render', { project: details, context, ...domainPayload(context) });
 
 export function mergeBridgeEstimate(base: GeneratedPlan, result: InteriorBridgeResult): GeneratedPlan {
   if (!result.ok) return base;
