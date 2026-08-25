@@ -7,6 +7,7 @@ import { LoadingSpinner } from './components/LoadingSpinner';
 import { AdSenseLoadingOverlay } from './components/AdSenseLoadingOverlay';
 import { AdminPanel } from './components/AdminPanel';
 import { DesignStudio } from './components/DesignStudio';
+import { EstimateMarketplaceMode } from './components/EstimateMarketplaceMode';
 import {
     generateVisualizations,
     generateMasterTemplate,
@@ -15,8 +16,10 @@ import {
     createVirtualPlanFromDimensions
 } from './services/geminiService';
 import { generateDeterministicProjectPlan } from './services/deterministicEstimate';
+import { loadMarketplaceContext, saveMarketplaceContext } from './services/estimateMarketplace';
 import { addHistoricalDetailed } from './utils/adminStorage';
 import { AppState, ProjectDetails, GeneratedPlan } from './types';
+import { EstimateMarketplaceContext } from './contracts/estimateMarketplace';
 
 const App: React.FC = () => {
   const [appState, setAppState] = useState<AppState>(AppState.INPUT);
@@ -28,11 +31,18 @@ const App: React.FC = () => {
   const [isModifying, setIsModifying] = useState<boolean>(false);
   const [loadingSection, setLoadingSection] = useState<'materials' | 'package' | 'report' | 'schedule' | null>(null);
   const [showAdmin, setShowAdmin] = useState(false);
+  const [marketplaceContext, setMarketplaceContext] = useState<EstimateMarketplaceContext>(() => loadMarketplaceContext());
+
+  const handleMarketplaceChange = useCallback((context: EstimateMarketplaceContext) => {
+    setMarketplaceContext(context);
+    saveMarketplaceContext(context);
+  }, []);
 
   const processProject = async (details: ProjectDetails) => {
       setProjectDetails(details);
       setError(null);
       setGeneratedPlan(null);
+      saveMarketplaceContext(marketplaceContext);
       const skip3D = !details.wants3DGeneration;
 
       try {
@@ -110,8 +120,9 @@ const App: React.FC = () => {
   };
 
   const handleInitialSubmit = useCallback(async (details: ProjectDetails) => {
+    saveMarketplaceContext(marketplaceContext);
     await processProject(details);
-  }, []);
+  }, [marketplaceContext]);
 
   const handleStyleModification = useCallback(async (viewToModify: 'iso' | 'pers') => {
     const baseImage = viewToModify === 'iso' ? isometricView : perspectiveView;
@@ -198,7 +209,12 @@ const App: React.FC = () => {
 
     switch (appState) {
       case AppState.INPUT:
-        return <UserInputForm onSubmit={handleInitialSubmit} error={error} />;
+        return (
+          <>
+            <EstimateMarketplaceMode value={marketplaceContext} onChange={handleMarketplaceChange} />
+            <UserInputForm onSubmit={handleInitialSubmit} error={error} />
+          </>
+        );
       case AppState.ANALYZING_PLAN:
         return (
           <AdSenseLoadingOverlay
@@ -250,7 +266,12 @@ const App: React.FC = () => {
           />
         );
       default:
-        return <UserInputForm onSubmit={handleInitialSubmit} error={error} />;
+        return (
+          <>
+            <EstimateMarketplaceMode value={marketplaceContext} onChange={handleMarketplaceChange} />
+            <UserInputForm onSubmit={handleInitialSubmit} error={error} />
+          </>
+        );
     }
   };
 
