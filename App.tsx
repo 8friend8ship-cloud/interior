@@ -9,6 +9,7 @@ import { AdminPanel } from './components/AdminPanel';
 import { DesignStudio } from './components/DesignStudio';
 import { EstimateMarketplaceMode } from './components/EstimateMarketplaceMode';
 import { EstimateTemplateSummary } from './components/EstimateTemplateSummary';
+import { ConnectedEstimateDetails } from './components/ConnectedEstimateDetails';
 import {
     generateVisualizations,
     generateMasterTemplate,
@@ -18,6 +19,15 @@ import {
 } from './services/geminiService';
 import { generateDeterministicProjectPlan } from './services/deterministicEstimate';
 import { loadMarketplaceContext, saveMarketplaceContext } from './services/estimateMarketplace';
+import {
+    fetchInteriorEstimateBundle,
+    fetchInteriorMaterials,
+    fetchInteriorRender,
+    mergeBridgeEstimate,
+    extractBridgeMaterials,
+    extractBridgeRender,
+    InteriorBridgeResult,
+} from './services/interiorBackdataBridge';
 import { addHistoricalDetailed } from './utils/adminStorage';
 import { AppState, ProjectDetails, GeneratedPlan } from './types';
 import { EstimateMarketplaceContext } from './contracts/estimateMarketplace';
@@ -32,6 +42,7 @@ const App: React.FC = () => {
   const [isModifying, setIsModifying] = useState<boolean>(false);
   const [loadingSection, setLoadingSection] = useState<'materials' | 'package' | 'report' | 'schedule' | null>(null);
   const [showAdmin, setShowAdmin] = useState(false);
+  const [bridgeStatus, setBridgeStatus] = useState<InteriorBridgeResult | null>(null);
   const [marketplaceContext, setMarketplaceContext] = useState<EstimateMarketplaceContext>(() => loadMarketplaceContext());
 
   const handleMarketplaceChange = useCallback((context: EstimateMarketplaceContext) => {
@@ -43,6 +54,7 @@ const App: React.FC = () => {
       setProjectDetails(details);
       setError(null);
       setGeneratedPlan(null);
+      setBridgeStatus(null);
       saveMarketplaceContext(marketplaceContext);
       const skip3D = !details.wants3DGeneration;
 
@@ -73,15 +85,25 @@ const App: React.FC = () => {
             await handleFinalizeLogic(detailsWithPlan);
         } else {
             setAppState(AppState.GENERATING_VIEWS);
-            const { isometricView, perspectiveView } = await generateVisualizations(
-                virtualPlan,
-                details.image,
-                details.modelType,
-                true,
-                details.projectScope
-            );
-            setIsometricView(isometricView);
-            setPerspectiveView(perspectiveView);
+
+            const bridgeRender = await fetchInteriorRender(detailsWithPlan, marketplaceContext);
+            const connectedRender = extractBridgeRender(bridgeRender);
+            setBridgeStatus(bridgeRender);
+
+            if (connectedRender.isometricView && connectedRender.perspectiveView) {
+              setIsometricView(connectedRender.isometricView);
+              setPerspectiveView(connectedRender.perspectiveView);
+            } else {
+              const liveViews = await generateVisualizations(
+                  virtualPlan,
+                  details.image,
+                  details.modelType,
+                  details.isDemo === true,
+                  details.projectScope
+              );
+              setIsometricView(liveViews.isometricView);
+              setPerspectiveView(liveViews.perspectiveView);
+            }
             setAppState(AppState.DESIGN_STUDIO);
         }
       } catch (err) {
@@ -95,11 +117,14 @@ const App: React.FC = () => {
   const handleFinalizeLogic = async (details: ProjectDetails) => {
       setAppState(AppState.FINALIZING);
       try {
-        const basicPlan = generateDeterministicProjectPlan(details);
+        const deterministicPlan = generateDeterministicProjectPlan(details);
+        const bridgeEstimate = await fetchInteriorEstimateBundle(details, marketplaceContext);
+        const finalPlan = mergeBridgeEstimate(deterministicPlan, bridgeEstimate);
+        setBridgeStatus(bridgeEstimate);
 
         if (details.projectScope === 'bathroom' || details.projectScope === 'sash') {
-            const totalPrice = basicPlan.costEstimate.reduce((sum, item) => sum + (item.totalPrice || 0), 0);
-            const summary = basicPlan.designConcept.description.substring(0, 100) + '...';
+            const totalPrice = finalPlan.costEstimate.reduce((sum, item) => sum + (item.totalPrice || 0), 0);
+            const summary = finalPlan.designConcept.description.substring(0, 100) + '...';
             addHistoricalDetailed({
                 id: `hist_${Date.now()}`,
                 type: details.projectScope,
@@ -111,7 +136,7 @@ const App: React.FC = () => {
             });
         }
 
-        setGeneratedPlan(basicPlan);
+        setGeneratedPlan(finalPlan);
         setAppState(AppState.RESULTS);
       } catch (err) {
         const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred.';
@@ -147,16 +172,23 @@ const App: React.FC = () => {
     };
     setProjectDetails(finalDetails);
     await handleFinalizeLogic(finalDetails);
-  }, [projectDetails, isometricView, perspectiveView]);
+  }, [projectDetails, isometricView, perspectiveView, marketplaceContext]);
 
   const handleLoadMaterials = async () => {
       if (!projectDetails || !generatedPlan) return;
       setLoadingSection('materials');
       try {
-          const { sheet, prompts } = await generateMaterialDetails({ ...projectDetails, isDemo: true });
-          setGeneratedPlan(prev => prev ? { ...prev, materialDetailSheet: sheet, materialBoardPrompts: prompts } : null);
+          const bridgeMaterials = await fetchInteriorMaterials(projectDetails, marketplaceContext);
+          const connectedMaterials = extractBridgeMaterials(bridgeMaterials);
+          setBridgeStatus(bridgeMaterials);
+          if (connectedMaterials.length > 0) {
+            setGeneratedPlan(prev => prev ? { ...prev, materialDetailSheet: connectedMaterials } : null);
+          } else {
+            const { sheet, prompts } = await generateMaterialDetails({ ...projectDetails, isDemo: projectDetails.isDemo === true });
+            setGeneratedPlan(prev => prev ? { ...prev, materialDetailSheet: sheet, materialBoardPrompts: prompts } : null);
+          }
       } catch (e) {
-          console.warn('Stored material detail fallback unavailable', e);
+          console.warn('Material bridge/enrichment unavailable', e);
       } finally {
           setLoadingSection(null);
       }
@@ -173,7 +205,7 @@ const App: React.FC = () => {
       if (!projectDetails || !generatedPlan) return;
       setLoadingSection('package');
       try {
-           const projectPackage = await generateProjectPackage({ ...projectDetails, isDemo: true });
+           const projectPackage = await generateProjectPackage({ ...projectDetails, isDemo: projectDetails.isDemo === true });
            setGeneratedPlan(prev => prev ? { ...prev, projectPackage } : null);
       } catch (e) {
           console.warn('Stored project package fallback unavailable', e);
@@ -186,7 +218,7 @@ const App: React.FC = () => {
       if (!projectDetails || !generatedPlan) return;
       setLoadingSection('report');
       try {
-          const masterTemplate = await generateMasterTemplate({ ...projectDetails, isDemo: true }, generatedPlan);
+          const masterTemplate = await generateMasterTemplate({ ...projectDetails, isDemo: projectDetails.isDemo === true }, generatedPlan);
           setGeneratedPlan(prev => prev ? { ...prev, masterTemplate } : null);
       } catch (e) {
           console.warn('Stored report fallback unavailable', e);
@@ -201,6 +233,7 @@ const App: React.FC = () => {
     setGeneratedPlan(null);
     setIsometricView(null);
     setPerspectiveView(null);
+    setBridgeStatus(null);
     setError(null);
     setLoadingSection(null);
   }, []);
@@ -220,14 +253,14 @@ const App: React.FC = () => {
         return (
           <AdSenseLoadingOverlay
             message={isBathroomMode ? '욕실 치수·물량 준비 중...' : '면적·선택 공종 기준 물량 준비 중...'}
-            subMessage="저장된 견적 템플릿과 입력값으로 API 없이 계산합니다."
+            subMessage="백데이터 브릿지와 저장 템플릿을 우선 조회하고, 실패 시 결정형 견적으로 안전하게 계속합니다."
           />
         );
       case AppState.GENERATING_VIEWS:
         return (
           <AdSenseLoadingOverlay
-            message="로컬 3D 프리뷰 준비 중..."
-            subMessage="MVP에서는 외부 생성형 API를 호출하지 않고 안전한 프리뷰를 사용합니다."
+            message="아이소·투시도 준비 중..."
+            subMessage="렌더 브릿지를 먼저 확인하고 사용 가능한 연결이 없을 때만 설정된 이미지 생성 경로를 사용합니다."
           />
         );
       case AppState.DESIGN_STUDIO:
@@ -249,14 +282,15 @@ const App: React.FC = () => {
       case AppState.FINALIZING:
         return (
            <AdSenseLoadingOverlay
-            message="최종 실행견적 산출 중..."
-            subMessage="PTPL-PAUL-EXPERT-V1 → T2_INTERIOR_ESTIMATE_RENDER_V2 기준으로 물량·BOM·인건비를 결정형 계산합니다."
+            message="최종 상세견적 산출 중..."
+            subMessage="Queens/Seed/T1/T2 백데이터 응답을 우선 병합하고 자재비·인건비·BOM·공정 근거를 함께 구성합니다."
           />
         );
       case AppState.RESULTS:
         return generatedPlan && projectDetails && (
           <>
             <EstimateTemplateSummary context={marketplaceContext} />
+            <ConnectedEstimateDetails plan={generatedPlan} bridgeStatus={bridgeStatus} />
             <ResultsDisplay
               plan={generatedPlan}
               details={projectDetails}
