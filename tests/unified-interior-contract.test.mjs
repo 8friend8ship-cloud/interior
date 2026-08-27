@@ -46,6 +46,13 @@ test('site evidence input is wired from App into bridge-bound project details', 
   assert.match(bridge, /\.\.\.evidencePayload\(details\)/);
 });
 
+test('site asset URL alone never becomes verified evidence', () => {
+  assert.doesNotMatch(siteInput, /verified:\s*\/\^https\?:/);
+  assert.match(siteInput, /verified:\s*existing\?\.verified\s*===\s*true/);
+  assert.match(siteInput, /setAssetVerified/);
+  assert.match(siteInput, /이 자료를 실제 확인했고 현장 사실과 일치함/);
+});
+
 test('client/internal estimate separation contract remains explicit', () => {
   for (const token of ['executionCost','margin','marginRate','subcontractorCost']) assert.match(marketplace, new RegExp(token));
 });
