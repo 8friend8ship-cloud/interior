@@ -1,5 +1,7 @@
 import type { GeneratedPlan, MaterialDetailItem, ProjectDetails, SchedulePhase } from '../types';
 import type { EstimateMarketplaceContext } from '../contracts/estimateMarketplace';
+import type { InteriorSiteContext } from '../contracts/siteContext';
+import { siteContextForBridge } from './siteContext';
 
 export type InteriorBridgeAction = 'health' | 'estimate' | 'materials' | 'labor' | 'template' | 'render' | 'schedule' | 'bridge';
 
@@ -17,6 +19,8 @@ export interface QuantityLineageQa {
   reason?: string;
   checkedItems: number;
 }
+
+type ProjectWithSite = ProjectDetails & { siteContext?: InteriorSiteContext };
 
 const callBridge = async (action: InteriorBridgeAction, payload: Record<string, unknown>): Promise<InteriorBridgeResult> => {
   try {
@@ -47,6 +51,11 @@ const domainPayload = (context: EstimateMarketplaceContext) => ({
   coverageGateRequired: true,
 });
 
+const evidencePayload = (details: ProjectDetails) => {
+  const site = (details as ProjectWithSite).siteContext;
+  return site ? siteContextForBridge(site) : { siteContext: null, siteQa: { ok: false, confidence: 'LOW', missing: ['siteContext'], blockers: ['SITE_CONTEXT_REQUIRED'] }, failClosed: true };
+};
+
 export const fetchInteriorHealth = () => callBridge('health', {});
 
 export const fetchInteriorEstimateBundle = (details: ProjectDetails, context: EstimateMarketplaceContext) =>
@@ -54,6 +63,7 @@ export const fetchInteriorEstimateBundle = (details: ProjectDetails, context: Es
     project: details,
     context,
     ...domainPayload(context),
+    ...evidencePayload(details),
     templateMode: context.templateMode,
     templateVersion: context.templateVersion,
     projectId: context.projectId,
@@ -61,23 +71,17 @@ export const fetchInteriorEstimateBundle = (details: ProjectDetails, context: Es
   });
 
 export const fetchInteriorMaterials = (details: ProjectDetails, context: EstimateMarketplaceContext) =>
-  callBridge('materials', { project: details, context, ...domainPayload(context) });
+  callBridge('materials', { project: details, context, ...domainPayload(context), ...evidencePayload(details) });
 
 export const fetchInteriorLabor = (details: ProjectDetails, context: EstimateMarketplaceContext) =>
-  callBridge('labor', { project: details, context, ...domainPayload(context) });
+  callBridge('labor', { project: details, context, ...domainPayload(context), ...evidencePayload(details) });
 
 export const fetchInteriorSchedule = (details: ProjectDetails, context: EstimateMarketplaceContext) =>
-  callBridge('schedule', { project: details, context, ...domainPayload(context) });
+  callBridge('schedule', { project: details, context, ...domainPayload(context), ...evidencePayload(details) });
 
 export const fetchInteriorRender = (details: ProjectDetails, context: EstimateMarketplaceContext) =>
-  callBridge('render', { project: details, context, ...domainPayload(context) });
+  callBridge('render', { project: details, context, ...domainPayload(context), ...evidencePayload(details) });
 
-/**
- * Live estimate quantity-lineage guard.
- * PR #9 proved that assigning target area to every unit='평' line destroys trade lineage.
- * Prefer explicit baseQuantity/baseAreaPy lineage when supplied by the backend; otherwise
- * fail closed on the characteristic collapse pattern (3+ distinct 평 items all equal targetPy).
- */
 export function validateBridgeQuantityLineage(costEstimate: any[], targetPy?: number): QuantityLineageQa {
   if (!Array.isArray(costEstimate) || costEstimate.length === 0) return { ok: false, reason: 'NO_COST_ESTIMATE', checkedItems: 0 };
 
