@@ -5,8 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "test:unified": "node --test tests/unified-interior-contract.test.mjs",
-    "prebuild": "node --test tests/unified-interior-contract.test.mjs && node scripts/generate-ads-txt.mjs",
+    "test:unified": "node --test tests/unified-interior-contract.test.mjs tests/site-context.test.mjs",
+    "prebuild": "node --test tests/unified-interior-contract.test.mjs tests/site-context.test.mjs && node scripts/generate-ads-txt.mjs",
     "build": "vite build",
     "preview": "vite preview"
   },
