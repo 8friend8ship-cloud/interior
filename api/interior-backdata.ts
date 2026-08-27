@@ -1,4 +1,3 @@
-const DEFAULT_ENDPOINT = 'https://script.google.com/macros/s/AKfycbyuYK2lx8FY0asRtaUaGXt8ha6ayokrTdr3afDozPErnEV4E5APpJcfm3mNujpKkR65Gg/exec';
 const ALLOWED_ACTIONS = new Set([
   'health',
   'estimate',
@@ -25,11 +24,11 @@ const CONSUMER_PRIVATE_FIELDS = new Set([
 ]);
 
 function resolveEndpoint() {
-  return process.env.INTERIOR_BACKDATA_ENDPOINT || process.env.AGENT_MAIL_ENDPOINT || DEFAULT_ENDPOINT;
+  return String(process.env.INTERIOR_BACKDATA_ENDPOINT || '').trim();
 }
 
 function resolveToken() {
-  return process.env.INTERIOR_BACKDATA_TOKEN || process.env.AGENT_MAIL_TOKEN || '';
+  return String(process.env.INTERIOR_BACKDATA_TOKEN || '').trim();
 }
 
 function sanitizeConsumerValue(value: any): any {
@@ -57,6 +56,16 @@ export default async function handler(req: any, res: any) {
     }
 
     const endpoint = resolveEndpoint();
+    if (!endpoint) {
+      res.setHeader('Cache-Control', 'no-store');
+      return res.status(503).json({
+        ok: false,
+        action,
+        error: 'INTERIOR_CORE_ENDPOINT_NOT_CONFIGURED',
+        bridge: 'INTERIOR_BACKDATA_BRIDGE_V4_CANONICAL_ENDPOINT_REQUIRED_20260827',
+      });
+    }
+
     const token = resolveToken();
     const payload = { ...(body.payload || {}), action, ...(token ? { token } : {}) };
 
@@ -81,10 +90,10 @@ export default async function handler(req: any, res: any) {
       action,
       upstreamStatus: response.status,
       data,
-      bridge: 'INTERIOR_BACKDATA_BRIDGE_V3_CONSUMER_SANITIZED_20260827',
+      bridge: 'INTERIOR_BACKDATA_BRIDGE_V4_CANONICAL_ENDPOINT_REQUIRED_20260827',
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown bridge error';
-    return res.status(500).json({ ok: false, error: message, bridge: 'INTERIOR_BACKDATA_BRIDGE_V3_CONSUMER_SANITIZED_20260827' });
+    return res.status(500).json({ ok: false, error: message, bridge: 'INTERIOR_BACKDATA_BRIDGE_V4_CANONICAL_ENDPOINT_REQUIRED_20260827' });
   }
 }
