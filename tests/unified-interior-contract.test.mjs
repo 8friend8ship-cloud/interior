@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync, existsSync } from 'node:fs';
+import ts from 'typescript';
 
 const app = readFileSync('App.tsx', 'utf8');
 const service = readFileSync('services/geminiService.ts', 'utf8');
@@ -13,14 +14,19 @@ const bridge = readFileSync('services/interiorBackdataBridge.ts', 'utf8');
 const runtime = readFileSync('apps-script/InteriorMarketplaceRuntime_20260825.gs', 'utf8');
 const pkg = JSON.parse(readFileSync('package.json', 'utf8'));
 
+function loadBridgeRuntime() {
+  const compiled = ts.transpileModule(bridge, { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2020 } }).outputText;
+  const module = { exports: {} };
+  new Function('exports', 'module', compiled)(module.exports, module);
+  return module.exports;
+}
+
 test('unified requirements are version-controlled', () => {
   assert.equal(existsSync('docs/INTERIOR_UNIFIED_REQUIREMENTS_20260827.md'), true);
 });
 
 test('marketplace roles, tiers and project domains remain in the unified candidate', () => {
-  for (const token of ['CONSUMER','SUPPLIER','FREE','PRO','SIMPLE','COMPARE','TENDER','RESIDENTIAL_INTERIOR','COMMERCIAL_INTERIOR','ARCHITECTURE_BUILD','RENOVATION_REMODEL']) {
-    assert.match(marketplace, new RegExp(token));
-  }
+  for (const token of ['CONSUMER','SUPPLIER','FREE','PRO','SIMPLE','COMPARE','TENDER','RESIDENTIAL_INTERIOR','COMMERCIAL_INTERIOR','ARCHITECTURE_BUILD','RENOVATION_REMODEL']) assert.match(marketplace, new RegExp(token));
 });
 
 test('consumer and supplier workflow modes are exposed in the front UI', () => {
@@ -82,13 +88,23 @@ test('core front still uses the Interior backdata bridge', () => {
   for (const token of ['fetchInteriorEstimateBundle','fetchInteriorMaterials','fetchInteriorSchedule','fetchInteriorRender']) assert.match(app, new RegExp(token));
 });
 
-test('quantity lineage preserves original trade quantity by area ratio', () => {
-  assert.match(bridge, /baseQuantity\s*\*\s*areaPy\s*\/\s*baseAreaPy/);
-  assert.match(bridge, /QUANTITY_RATIO_MISMATCH/);
+test('quantity lineage 32 to 40 keeps trade-specific quantities at runtime', () => {
+  const { validateBridgeQuantityLineage } = loadBridgeRuntime();
+  const result = validateBridgeQuantityLineage([
+    { category: '도배', item: '벽지', unit: '평', quantity: 100, baseQuantity: 80, baseAreaPy: 32, targetAreaPy: 40 },
+    { category: '바닥', item: '마루', unit: '평', quantity: 35, baseQuantity: 28, baseAreaPy: 32, targetAreaPy: 40 },
+    { category: '청소', item: '입주청소', unit: '평', quantity: 40, baseQuantity: 32, baseAreaPy: 32, targetAreaPy: 40 },
+  ], 40);
+  assert.deepEqual(result, { ok: true, checkedItems: 3 });
 });
 
-test('quantity lineage rejects target-py overwrite collapse across multiple trades', () => {
-  assert.match(bridge, /SUSPICIOUS_TARGET_PY_OVERWRITE/);
-  assert.match(bridge, /pyItems\.length\s*>=\s*3/);
-  assert.match(bridge, /collapsed\.length\s*===\s*pyItems\.length/);
+test('quantity lineage runtime rejects target-py overwrite collapse', () => {
+  const { validateBridgeQuantityLineage } = loadBridgeRuntime();
+  const result = validateBridgeQuantityLineage([
+    { category: '도배', item: '벽지', unit: '평', quantity: 40 },
+    { category: '바닥', item: '마루', unit: '평', quantity: 40 },
+    { category: '청소', item: '입주청소', unit: '평', quantity: 40 },
+  ], 40);
+  assert.equal(result.ok, false);
+  assert.equal(result.reason, 'SUSPICIOUS_TARGET_PY_OVERWRITE');
 });
