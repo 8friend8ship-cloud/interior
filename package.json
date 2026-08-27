@@ -5,13 +5,13 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "prebuild": "node scripts/generate-ads-txt.mjs",
+    "test:unified": "node --test tests/unified-interior-contract.test.mjs",
+    "prebuild": "node --test tests/unified-interior-contract.test.mjs && node scripts/generate-ads-txt.mjs",
     "build": "vite build",
     "preview": "vite preview"
   },
   "dependencies": {
     "react-dom": "^19.2.4",
-    "@google/genai": "^1.40.0",
     "react": "^19.2.4",
     "xlsx": "0.18.5",
     "html2canvas": "1.4.1"
