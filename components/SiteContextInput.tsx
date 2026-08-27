@@ -39,12 +39,21 @@ export const SiteContextInput: React.FC<Props> = ({ value, onChange }) => {
   const updateUrl = (kind: SiteAssetKind, url: string) => {
     const nextUrls = { ...urls, [kind]: url };
     setUrls(nextUrls);
+    const existing = site.assets.find(a => a.kind === kind);
     const other = site.assets.filter(a => a.kind !== kind);
     const trimmed = url.trim();
     patch({
       assets: trimmed
-        ? [...other, { id: `${kind}-${Date.now()}`, kind, url: trimmed, verified: /^https?:\/\//i.test(trimmed) }]
+        ? [...other, { id: existing?.id || `${kind}-${Date.now()}`, kind, url: trimmed, verified: existing?.verified === true }]
         : other,
+    });
+  };
+
+  const setAssetVerified = (kind: SiteAssetKind, verified: boolean) => {
+    const existing = site.assets.find(a => a.kind === kind);
+    if (!existing?.url) return;
+    patch({
+      assets: site.assets.map(a => a.kind === kind ? { ...a, verified } : a),
     });
   };
 
@@ -54,7 +63,7 @@ export const SiteContextInput: React.FC<Props> = ({ value, onChange }) => {
         <div>
           <p className="text-xs font-bold uppercase tracking-wide text-sky-600">현장 · 도로 · 주차 근거</p>
           <h2 className="mt-1 text-lg font-bold text-gray-900">도면과 현장관계를 같이 확인합니다</h2>
-          <p className="mt-1 text-sm text-gray-500">URL/ID 포인터를 우선 사용합니다. 확인되지 않은 대지경계·도로높이·주차·현관동선은 임의 추정하지 않습니다.</p>
+          <p className="mt-1 text-sm text-gray-500">URL/ID 포인터만으로 검증 완료 처리하지 않습니다. 자료를 실제 확인한 뒤에만 확인 완료를 체크합니다.</p>
         </div>
         <span className={`rounded-full px-3 py-1 text-xs font-bold ${qa.ok ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'}`}>
           {qa.ok ? '현장근거 확인' : '현장근거 보완 필요'}
@@ -94,11 +103,20 @@ export const SiteContextInput: React.FC<Props> = ({ value, onChange }) => {
       </div>
 
       <div className="mt-5 grid gap-3 md:grid-cols-2">
-        {assetKinds.map(({ kind, label }) => (
-          <label key={kind} className="text-sm font-semibold text-gray-800">{label}
-            <input type="url" value={urls[kind] || ''} onChange={e => updateUrl(kind, e.target.value)} placeholder="https://..." className="mt-2 w-full rounded-xl border border-gray-200 px-3 py-2 font-normal" />
-          </label>
-        ))}
+        {assetKinds.map(({ kind, label }) => {
+          const asset = site.assets.find(a => a.kind === kind);
+          return (
+            <div key={kind} className="rounded-xl border border-gray-200 p-3">
+              <label className="text-sm font-semibold text-gray-800">{label}
+                <input type="url" value={urls[kind] || ''} onChange={e => updateUrl(kind, e.target.value)} placeholder="https://..." className="mt-2 w-full rounded-xl border border-gray-200 px-3 py-2 font-normal" />
+              </label>
+              <label className="mt-2 flex items-center gap-2 text-xs text-gray-700">
+                <input type="checkbox" disabled={!asset?.url} checked={asset?.verified === true} onChange={e => setAssetVerified(kind, e.target.checked)} />
+                <span>이 자료를 실제 확인했고 현장 사실과 일치함</span>
+              </label>
+            </div>
+          );
+        })}
       </div>
 
       {!qa.ok && <div className="mt-4 rounded-xl bg-amber-50 p-3 text-xs text-amber-800">
