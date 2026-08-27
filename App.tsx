@@ -9,6 +9,7 @@ import { DesignStudio } from './components/DesignStudio';
 import { EstimateMarketplaceMode } from './components/EstimateMarketplaceMode';
 import { EstimateTemplateSummary } from './components/EstimateTemplateSummary';
 import { ConnectedEstimateDetails } from './components/ConnectedEstimateDetails';
+import { SiteContextInput } from './components/SiteContextInput';
 import { createVirtualPlanFromDimensions } from './services/virtualPlan';
 import { generateDeterministicProjectPlan } from './services/deterministicEstimate';
 import { loadMarketplaceContext, saveMarketplaceContext } from './services/estimateMarketplace';
@@ -25,6 +26,7 @@ import {
 import { addHistoricalDetailed } from './utils/adminStorage';
 import { AppState, ProjectDetails, GeneratedPlan } from './types';
 import { EstimateMarketplaceContext } from './contracts/estimateMarketplace';
+import type { InteriorSiteContext } from './contracts/siteContext';
 
 const App: React.FC = () => {
   const [appState, setAppState] = useState<AppState>(AppState.INPUT);
@@ -37,6 +39,7 @@ const App: React.FC = () => {
   const [loadingSection, setLoadingSection] = useState<'materials' | 'package' | 'report' | 'schedule' | null>(null);
   const [bridgeStatus, setBridgeStatus] = useState<InteriorBridgeResult | null>(null);
   const [marketplaceContext, setMarketplaceContext] = useState<EstimateMarketplaceContext>(() => loadMarketplaceContext());
+  const [siteContext, setSiteContext] = useState<InteriorSiteContext | null>(null);
 
   const handleMarketplaceChange = useCallback((context: EstimateMarketplaceContext) => {
     setMarketplaceContext(context);
@@ -128,8 +131,9 @@ const App: React.FC = () => {
 
   const handleInitialSubmit = useCallback(async (details: ProjectDetails) => {
     saveMarketplaceContext(marketplaceContext);
-    await processProject(details);
-  }, [marketplaceContext]);
+    const detailsWithSite = siteContext ? { ...details, siteContext } : details;
+    await processProject(detailsWithSite);
+  }, [marketplaceContext, siteContext]);
 
   const handleStyleModification = useCallback(async (viewToModify: 'iso' | 'pers') => {
     const baseImage = viewToModify === 'iso' ? isometricView : perspectiveView;
@@ -215,6 +219,7 @@ const App: React.FC = () => {
     setIsometricView(null);
     setPerspectiveView(null);
     setBridgeStatus(null);
+    setSiteContext(null);
     setError(null);
     setLoadingSection(null);
   }, []);
@@ -227,6 +232,7 @@ const App: React.FC = () => {
         return (
           <>
             <EstimateMarketplaceMode value={marketplaceContext} onChange={handleMarketplaceChange} />
+            <SiteContextInput value={siteContext} onChange={setSiteContext} />
             <UserInputForm onSubmit={handleInitialSubmit} error={error} />
           </>
         );
@@ -288,6 +294,7 @@ const App: React.FC = () => {
         return (
           <>
             <EstimateMarketplaceMode value={marketplaceContext} onChange={handleMarketplaceChange} />
+            <SiteContextInput value={siteContext} onChange={setSiteContext} />
             <UserInputForm onSubmit={handleInitialSubmit} error={error} />
           </>
         );
