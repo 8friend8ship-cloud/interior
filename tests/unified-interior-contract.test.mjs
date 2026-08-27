@@ -17,7 +17,11 @@ const pkg = JSON.parse(readFileSync('package.json', 'utf8'));
 function loadBridgeRuntime() {
   const compiled = ts.transpileModule(bridge, { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2020 } }).outputText;
   const module = { exports: {} };
-  new Function('exports', 'module', compiled)(module.exports, module);
+  const localRequire = (specifier) => {
+    if (specifier === './siteContext') return { siteContextForBridge: (site) => site };
+    throw new Error(`Unexpected runtime dependency in bridge QA: ${specifier}`);
+  };
+  new Function('exports', 'module', 'require', compiled)(module.exports, module, localRequire);
   return module.exports;
 }
 
