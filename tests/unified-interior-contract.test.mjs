@@ -62,7 +62,14 @@ test('consumer API response recursively strips internal cost and margin fields',
   for (const token of ['executionCost','executionUnitPrice','margin','marginRate','internalNote','subcontractorCost','materialCost','laborCost']) assert.match(apiBridge, new RegExp(token));
   assert.match(apiBridge, /sanitizeConsumerValue/);
   assert.match(apiBridge, /role !== 'SUPPLIER'/);
-  assert.match(apiBridge, /INTERIOR_BACKDATA_BRIDGE_V3_CONSUMER_SANITIZED_20260827/);
+  assert.match(apiBridge, /INTERIOR_BACKDATA_BRIDGE_V4_CANONICAL_ENDPOINT_REQUIRED_20260827/);
+});
+
+test('Interior API requires canonical endpoint and forbids stale cross-app fallback', () => {
+  assert.match(apiBridge, /process\.env\.INTERIOR_BACKDATA_ENDPOINT/);
+  assert.match(apiBridge, /INTERIOR_CORE_ENDPOINT_NOT_CONFIGURED/);
+  assert.doesNotMatch(apiBridge, /AGENT_MAIL_ENDPOINT|AGENT_MAIL_TOKEN/);
+  assert.doesNotMatch(apiBridge, /AKfycbyuYK2lx8FY0asRtaUaGXt8ha6ayokrTdr3afDozPErnEV4E5APpJcfm3mNujpKkR65Gg/);
 });
 
 test('fallback does not fabricate a priced estimate from the 32-pyeong sample', () => {
