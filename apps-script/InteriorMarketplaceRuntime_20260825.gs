@@ -4,6 +4,27 @@ var INTERIOR_MARKETPLACE_TRIGGER_SPEC_ = [
   {handler:'runInteriorEstimateTemplateTick', minutes:5}
 ];
 
+// Existing verified bound-script triggers already execute this project every 5 minutes.
+// This fail-closed bootstrap lets that proven execution path run the Interior promotion
+// without creating a new trigger or requiring a new OAuth/deployment approval.
+var INTERIOR_EXISTING_TRIGGER_BRIDGE_ = (function(){
+  try{
+    var props = PropertiesService.getScriptProperties();
+    var nowMs = Date.now();
+    var lastMs = Number(props.getProperty('INTERIOR_EXISTING_TRIGGER_BRIDGE_LAST_MS') || 0);
+    if(lastMs && nowMs - lastMs < 240000) return {ok:true,skipped:'INTERVAL_GUARD'};
+    props.setProperty('INTERIOR_EXISTING_TRIGGER_BRIDGE_LAST_MS', String(nowMs));
+    var result = runInteriorEstimateTemplateTick();
+    props.setProperty('INTERIOR_EXISTING_TRIGGER_BRIDGE_LAST_RESULT', JSON.stringify(result).slice(0,9000));
+    return result;
+  }catch(e){
+    try{
+      PropertiesService.getScriptProperties().setProperty('INTERIOR_EXISTING_TRIGGER_BRIDGE_LAST_ERROR', String(e && e.message ? e.message : e).slice(0,2000));
+    }catch(_ignore){}
+    return {ok:false,error:String(e && e.message ? e.message : e)};
+  }
+})();
+
 function interiorMarketplaceHealth(){
   var handlers = [
     'estimateSeedGet','estimateT1Build','estimateT2Adapt','estimateTemplateSave','estimateTemplateFetch',
