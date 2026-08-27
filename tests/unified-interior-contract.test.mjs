@@ -1,0 +1,60 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { readFileSync, existsSync } from 'node:fs';
+
+const app = readFileSync('App.tsx', 'utf8');
+const service = readFileSync('services/geminiService.ts', 'utf8');
+const marketplace = readFileSync('contracts/estimateMarketplace.ts', 'utf8');
+const deterministic = readFileSync('services/deterministicEstimate.ts', 'utf8');
+const runtime = readFileSync('apps-script/InteriorMarketplaceRuntime_20260825.gs', 'utf8');
+const pkg = JSON.parse(readFileSync('package.json', 'utf8'));
+
+test('unified requirements are version-controlled', () => {
+  assert.equal(existsSync('docs/INTERIOR_UNIFIED_REQUIREMENTS_20260827.md'), true);
+});
+
+test('marketplace roles, tiers and project domains remain in the unified candidate', () => {
+  for (const token of ['CONSUMER','SUPPLIER','FREE','PRO','SIMPLE','COMPARE','TENDER','RESIDENTIAL_INTERIOR','COMMERCIAL_INTERIOR','ARCHITECTURE_BUILD','RENOVATION_REMODEL']) {
+    assert.match(marketplace, new RegExp(token));
+  }
+});
+
+test('client/internal estimate separation contract remains explicit', () => {
+  for (const token of ['executionCost','margin','marginRate','subcontractorCost']) assert.match(marketplace, new RegExp(token));
+});
+
+test('fallback does not fabricate a priced estimate from the 32-pyeong sample', () => {
+  assert.match(deterministic, /costEstimate = \[\]/);
+  assert.match(deterministic, /VERIFIED_PROJECT_BOM_NOT_AVAILABLE_ON_FALLBACK/);
+});
+
+test('Queens to Seed T1 T2 runtime promotion exists', () => {
+  assert.match(runtime, /interiorPromoteReadyQueens_/);
+  assert.match(runtime, /TEMPLATE_STAGE_1/);
+  assert.match(runtime, /TEMPLATE_STAGE_2/);
+});
+
+test('legacy DryWriter runtime guard files are absorbed', () => {
+  assert.equal(existsSync('apps-script/InteriorFactoryRuntimeGuard.gs'), true);
+  assert.equal(existsSync('apps-script/InteriorFactoryRuntimeRepair.gs'), true);
+  assert.equal(existsSync('apps-script/InteriorFactoryTemplateUpgrade.gs'), true);
+});
+
+test('local language/Bots bridge is absorbed', () => {
+  assert.equal(existsSync('FrontLanguageBotBridge.tsx'), true);
+  assert.match(readFileSync('index.tsx','utf8'), /FrontLanguageBotBridge/);
+});
+
+test('browser AI secrets and SDK are forbidden in the unified candidate', () => {
+  assert.equal(pkg.dependencies['@google/genai'], undefined, 'remove browser @google/genai dependency');
+  assert.doesNotMatch(service, /process\.env\.(GEMINI_API_KEY|API_KEY)/);
+  assert.doesNotMatch(service, /@google\/genai|GoogleGenAI/);
+});
+
+test('silent mock image fallback is forbidden outside explicit demo mode', () => {
+  assert.doesNotMatch(service, /catch[\s\S]{0,500}MOCK_IMAGE_BASE64/);
+});
+
+test('core front still uses the Interior backdata bridge', () => {
+  for (const token of ['fetchInteriorEstimateBundle','fetchInteriorMaterials','fetchInteriorSchedule','fetchInteriorRender']) assert.match(app, new RegExp(token));
+});
