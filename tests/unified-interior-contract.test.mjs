@@ -5,6 +5,8 @@ import { readFileSync, existsSync } from 'node:fs';
 const app = readFileSync('App.tsx', 'utf8');
 const service = readFileSync('services/geminiService.ts', 'utf8');
 const marketplace = readFileSync('contracts/estimateMarketplace.ts', 'utf8');
+const marketplaceUi = readFileSync('components/EstimateMarketplaceMode.tsx', 'utf8');
+const connectedDetails = readFileSync('components/ConnectedEstimateDetails.tsx', 'utf8');
 const deterministic = readFileSync('services/deterministicEstimate.ts', 'utf8');
 const bridge = readFileSync('services/interiorBackdataBridge.ts', 'utf8');
 const runtime = readFileSync('apps-script/InteriorMarketplaceRuntime_20260825.gs', 'utf8');
@@ -20,8 +22,19 @@ test('marketplace roles, tiers and project domains remain in the unified candida
   }
 });
 
+test('consumer and supplier workflow modes are exposed in the front UI', () => {
+  for (const token of ['SIMPLE','COMPARE','TENDER','REGISTER_BID','AUTOMATION','PLATFORM']) assert.match(marketplaceUi, new RegExp(token));
+});
+
 test('client/internal estimate separation contract remains explicit', () => {
   for (const token of ['executionCost','margin','marginRate','subcontractorCost']) assert.match(marketplace, new RegExp(token));
+});
+
+test('consumer result UI hides execution cost detail while supplier can inspect it', () => {
+  assert.match(connectedDetails, /const isSupplier = context\.userRole === 'SUPPLIER'/);
+  assert.match(connectedDetails, /isSupplier && <td[^>]*>.*materialCost/s);
+  assert.match(connectedDetails, /isSupplier && <td[^>]*>.*laborCost/s);
+  assert.match(connectedDetails, /고객 견적 합계/);
 });
 
 test('fallback does not fabricate a priced estimate from the 32-pyeong sample', () => {
