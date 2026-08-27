@@ -7,6 +7,7 @@ import { LoadingSpinner } from './components/LoadingSpinner';
 import { AdSenseLoadingOverlay } from './components/AdSenseLoadingOverlay';
 import { DesignStudio } from './components/DesignStudio';
 import { EstimateMarketplaceMode } from './components/EstimateMarketplaceMode';
+import { EstimateRequestForm } from './components/EstimateRequestForm';
 import { EstimateTemplateSummary } from './components/EstimateTemplateSummary';
 import { ConnectedEstimateDetails } from './components/ConnectedEstimateDetails';
 import { SiteContextInput } from './components/SiteContextInput';
@@ -26,7 +27,16 @@ import {
 import { addHistoricalDetailed } from './utils/adminStorage';
 import { AppState, ProjectDetails, GeneratedPlan } from './types';
 import { EstimateMarketplaceContext } from './contracts/estimateMarketplace';
+import type { EstimateRequestDraft } from './contracts/estimateRequest';
 import type { InteriorSiteContext } from './contracts/siteContext';
+
+const emptyEstimateRequest = (): EstimateRequestDraft => ({
+  formSchemaId: '',
+  version: 'ESTIMATE_REQUEST_V1_20260827',
+  answers: {},
+  attachmentKinds: [],
+  completedRequiredFields: false,
+});
 
 const App: React.FC = () => {
   const [appState, setAppState] = useState<AppState>(AppState.INPUT);
@@ -39,11 +49,13 @@ const App: React.FC = () => {
   const [loadingSection, setLoadingSection] = useState<'materials' | 'package' | 'report' | 'schedule' | null>(null);
   const [bridgeStatus, setBridgeStatus] = useState<InteriorBridgeResult | null>(null);
   const [marketplaceContext, setMarketplaceContext] = useState<EstimateMarketplaceContext>(() => loadMarketplaceContext());
+  const [estimateRequest, setEstimateRequest] = useState<EstimateRequestDraft>(() => emptyEstimateRequest());
   const [siteContext, setSiteContext] = useState<InteriorSiteContext | null>(null);
 
   const handleMarketplaceChange = useCallback((context: EstimateMarketplaceContext) => {
     setMarketplaceContext(context);
     saveMarketplaceContext(context);
+    setEstimateRequest(prev => ({ ...prev, formSchemaId: '', completedRequiredFields: false }));
   }, []);
 
   const processProject = async (details: ProjectDetails) => {
@@ -57,9 +69,6 @@ const App: React.FC = () => {
       try {
         setAppState(AppState.ANALYZING_PLAN);
 
-        // Never invent a square floorplan from area alone. Only customer-entered
-        // verified dimensions create a local virtual plan. Plan/photo analysis is
-        // delegated to the audited Interior backend/bridge.
         const virtualPlan = (
           details.projectScope === 'bathroom' &&
           details.bathroomSpecifics?.useDimensionsOnly &&
@@ -131,9 +140,17 @@ const App: React.FC = () => {
 
   const handleInitialSubmit = useCallback(async (details: ProjectDetails) => {
     saveMarketplaceContext(marketplaceContext);
-    const detailsWithSite = siteContext ? { ...details, siteContext } : details;
-    await processProject(detailsWithSite);
-  }, [marketplaceContext, siteContext]);
+    if (!estimateRequest.completedRequiredFields) {
+      setError('견적 의뢰서의 필수 항목을 먼저 확인해 주세요. 비교견적·입찰 모드에서는 추가 질문과 필수 자료가 적용됩니다.');
+      return;
+    }
+    const detailsWithContext = {
+      ...details,
+      ...(siteContext ? { siteContext } : {}),
+      estimateRequest,
+    };
+    await processProject(detailsWithContext);
+  }, [marketplaceContext, siteContext, estimateRequest]);
 
   const handleStyleModification = useCallback(async (viewToModify: 'iso' | 'pers') => {
     const baseImage = viewToModify === 'iso' ? isometricView : perspectiveView;
@@ -219,6 +236,7 @@ const App: React.FC = () => {
     setIsometricView(null);
     setPerspectiveView(null);
     setBridgeStatus(null);
+    setEstimateRequest(emptyEstimateRequest());
     setSiteContext(null);
     setError(null);
     setLoadingSection(null);
@@ -232,6 +250,7 @@ const App: React.FC = () => {
         return (
           <>
             <EstimateMarketplaceMode value={marketplaceContext} onChange={handleMarketplaceChange} />
+            <EstimateRequestForm context={marketplaceContext} value={estimateRequest} onChange={setEstimateRequest} />
             <SiteContextInput value={siteContext} onChange={setSiteContext} />
             <UserInputForm onSubmit={handleInitialSubmit} error={error} />
           </>
@@ -294,6 +313,7 @@ const App: React.FC = () => {
         return (
           <>
             <EstimateMarketplaceMode value={marketplaceContext} onChange={handleMarketplaceChange} />
+            <EstimateRequestForm context={marketplaceContext} value={estimateRequest} onChange={setEstimateRequest} />
             <SiteContextInput value={siteContext} onChange={setSiteContext} />
             <UserInputForm onSubmit={handleInitialSubmit} error={error} />
           </>
