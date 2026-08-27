@@ -10,12 +10,37 @@ const ALLOWED_ACTIONS = new Set([
   'bridge',
 ]);
 
+const CONSUMER_PRIVATE_FIELDS = new Set([
+  'executionCost',
+  'executionUnitPrice',
+  'margin',
+  'marginRate',
+  'internalNote',
+  'subcontractorCost',
+  'vendorInternalTerms',
+  'materialCost',
+  'laborCost',
+  'unitCost',
+  'purchaseCost',
+]);
+
 function resolveEndpoint() {
   return process.env.INTERIOR_BACKDATA_ENDPOINT || process.env.AGENT_MAIL_ENDPOINT || DEFAULT_ENDPOINT;
 }
 
 function resolveToken() {
   return process.env.INTERIOR_BACKDATA_TOKEN || process.env.AGENT_MAIL_TOKEN || '';
+}
+
+function sanitizeConsumerValue(value: any): any {
+  if (Array.isArray(value)) return value.map(sanitizeConsumerValue);
+  if (!value || typeof value !== 'object') return value;
+  const out: Record<string, any> = {};
+  for (const [key, child] of Object.entries(value)) {
+    if (CONSUMER_PRIVATE_FIELDS.has(key)) continue;
+    out[key] = sanitizeConsumerValue(child);
+  }
+  return out;
 }
 
 export default async function handler(req: any, res: any) {
@@ -45,16 +70,21 @@ export default async function handler(req: any, res: any) {
     let data: any = text;
     try { data = JSON.parse(text); } catch {}
 
+    const role = String(body?.payload?.context?.userRole || body?.payload?.userRole || 'CONSUMER').toUpperCase();
+    if (role !== 'SUPPLIER' && data && typeof data === 'object') {
+      data = sanitizeConsumerValue(data);
+    }
+
     res.setHeader('Cache-Control', 'no-store');
     return res.status(response.ok ? 200 : response.status).json({
       ok: response.ok,
       action,
       upstreamStatus: response.status,
       data,
-      bridge: 'INTERIOR_BACKDATA_BRIDGE_V2_20260825',
+      bridge: 'INTERIOR_BACKDATA_BRIDGE_V3_CONSUMER_SANITIZED_20260827',
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown bridge error';
-    return res.status(500).json({ ok: false, error: message, bridge: 'INTERIOR_BACKDATA_BRIDGE_V2_20260825' });
+    return res.status(500).json({ ok: false, error: message, bridge: 'INTERIOR_BACKDATA_BRIDGE_V3_CONSUMER_SANITIZED_20260827' });
   }
 }
