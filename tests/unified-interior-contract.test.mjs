@@ -6,6 +6,7 @@ const app = readFileSync('App.tsx', 'utf8');
 const service = readFileSync('services/geminiService.ts', 'utf8');
 const marketplace = readFileSync('contracts/estimateMarketplace.ts', 'utf8');
 const deterministic = readFileSync('services/deterministicEstimate.ts', 'utf8');
+const bridge = readFileSync('services/interiorBackdataBridge.ts', 'utf8');
 const runtime = readFileSync('apps-script/InteriorMarketplaceRuntime_20260825.gs', 'utf8');
 const pkg = JSON.parse(readFileSync('package.json', 'utf8'));
 
@@ -57,4 +58,15 @@ test('silent mock image fallback is forbidden outside explicit demo mode', () =>
 
 test('core front still uses the Interior backdata bridge', () => {
   for (const token of ['fetchInteriorEstimateBundle','fetchInteriorMaterials','fetchInteriorSchedule','fetchInteriorRender']) assert.match(app, new RegExp(token));
+});
+
+test('quantity lineage preserves original trade quantity by area ratio', () => {
+  assert.match(bridge, /baseQuantity\s*\*\s*areaPy\s*\/\s*baseAreaPy/);
+  assert.match(bridge, /QUANTITY_RATIO_MISMATCH/);
+});
+
+test('quantity lineage rejects target-py overwrite collapse across multiple trades', () => {
+  assert.match(bridge, /SUSPICIOUS_TARGET_PY_OVERWRITE/);
+  assert.match(bridge, /pyItems\.length\s*>=\s*3/);
+  assert.match(bridge, /collapsed\.length\s*===\s*pyItems\.length/);
 });
