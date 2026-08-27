@@ -12,6 +12,12 @@ export interface InteriorBridgeResult {
   bridge?: string;
 }
 
+export interface QuantityLineageQa {
+  ok: boolean;
+  reason?: string;
+  checkedItems: number;
+}
+
 const callBridge = async (action: InteriorBridgeAction, payload: Record<string, unknown>): Promise<InteriorBridgeResult> => {
   try {
     const response = await fetch('/api/interior-backdata', {
@@ -66,14 +72,61 @@ export const fetchInteriorSchedule = (details: ProjectDetails, context: Estimate
 export const fetchInteriorRender = (details: ProjectDetails, context: EstimateMarketplaceContext) =>
   callBridge('render', { project: details, context, ...domainPayload(context) });
 
-export function mergeBridgeEstimate(base: GeneratedPlan, result: InteriorBridgeResult): GeneratedPlan {
+/**
+ * Live estimate quantity-lineage guard.
+ * PR #9 proved that assigning target area to every unit='평' line destroys trade lineage.
+ * Prefer explicit baseQuantity/baseAreaPy lineage when supplied by the backend; otherwise
+ * fail closed on the characteristic collapse pattern (3+ distinct 평 items all equal targetPy).
+ */
+export function validateBridgeQuantityLineage(costEstimate: any[], targetPy?: number): QuantityLineageQa {
+  if (!Array.isArray(costEstimate) || costEstimate.length === 0) return { ok: false, reason: 'NO_COST_ESTIMATE', checkedItems: 0 };
+
+  let checked = 0;
+  for (const item of costEstimate) {
+    const quantity = Number(item?.quantity);
+    if (!Number.isFinite(quantity) || quantity < 0) return { ok: false, reason: 'INVALID_QUANTITY', checkedItems: checked };
+
+    const baseQuantity = Number(item?.baseQuantity ?? item?.sourceQuantity ?? item?.quantityLineage?.baseQuantity);
+    const baseAreaPy = Number(item?.baseAreaPy ?? item?.quantityLineage?.baseAreaPy);
+    const areaPy = Number(item?.targetAreaPy ?? item?.quantityLineage?.targetAreaPy ?? targetPy);
+    if (Number.isFinite(baseQuantity) && baseQuantity > 0 && Number.isFinite(baseAreaPy) && baseAreaPy > 0 && Number.isFinite(areaPy) && areaPy > 0) {
+      const expected = Math.round((baseQuantity * areaPy / baseAreaPy) * 10) / 10;
+      if (Math.abs(quantity - expected) > 0.11) return { ok: false, reason: 'QUANTITY_RATIO_MISMATCH', checkedItems: checked + 1 };
+      checked++;
+    }
+  }
+
+  if (Number.isFinite(Number(targetPy)) && Number(targetPy) > 0) {
+    const pyItems = costEstimate.filter(item => String(item?.unit || '').trim() === '평');
+    const collapsed = pyItems.filter(item => Math.abs(Number(item?.quantity) - Number(targetPy)) < 0.001);
+    const distinct = new Set(pyItems.map(item => `${item?.category || ''}|${item?.item || ''}`));
+    if (pyItems.length >= 3 && collapsed.length === pyItems.length && distinct.size >= 3) {
+      return { ok: false, reason: 'SUSPICIOUS_TARGET_PY_OVERWRITE', checkedItems: checked || pyItems.length };
+    }
+  }
+
+  return { ok: true, checkedItems: checked || costEstimate.length };
+}
+
+export function mergeBridgeEstimate(base: GeneratedPlan, result: InteriorBridgeResult, targetPy?: number): GeneratedPlan {
   if (!result.ok) return base;
   const value = unwrap(result);
   const estimate = value.t2 || value.estimate || value.plan || value.result || value;
   if (!estimate || typeof estimate !== 'object') return base;
 
   const next: GeneratedPlan = { ...base };
-  if (Array.isArray(estimate.costEstimate) && estimate.costEstimate.length) next.costEstimate = estimate.costEstimate;
+  if (Array.isArray(estimate.costEstimate) && estimate.costEstimate.length) {
+    const lineage = validateBridgeQuantityLineage(estimate.costEstimate, targetPy);
+    if (!lineage.ok) {
+      return {
+        ...base,
+        confidence: 'LOW',
+        confidenceReason: `QUANTITY_LINEAGE_REJECTED:${lineage.reason}`,
+        correctionNeeded: '공종별 원본 물량→면적비→최종 물량 계보를 확인한 뒤 같은 fixture로 재검증해야 합니다.',
+      };
+    }
+    next.costEstimate = estimate.costEstimate;
+  }
   if (Array.isArray(estimate.materialDetailSheet) && estimate.materialDetailSheet.length) next.materialDetailSheet = estimate.materialDetailSheet as MaterialDetailItem[];
   if (Array.isArray(estimate.projectSchedule) && estimate.projectSchedule.length) next.projectSchedule = estimate.projectSchedule as SchedulePhase[];
   if (estimate.designConcept) next.designConcept = { ...base.designConcept, ...estimate.designConcept };
