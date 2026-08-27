@@ -1,4 +1,4 @@
-import { generateDeterministicProjectPlan } from '../services/deterministicEstimate';
+import { generateDeterministicProjectPlan } from '../services/deterministicEstimate.js';
 
 function details(area: number) {
   return {
