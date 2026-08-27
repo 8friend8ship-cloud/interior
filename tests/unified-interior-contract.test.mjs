@@ -7,6 +7,7 @@ const app = readFileSync('App.tsx', 'utf8');
 const service = readFileSync('services/geminiService.ts', 'utf8');
 const marketplace = readFileSync('contracts/estimateMarketplace.ts', 'utf8');
 const marketplaceUi = readFileSync('components/EstimateMarketplaceMode.tsx', 'utf8');
+const siteInput = readFileSync('components/SiteContextInput.tsx', 'utf8');
 const connectedDetails = readFileSync('components/ConnectedEstimateDetails.tsx', 'utf8');
 const apiBridge = readFileSync('api/interior-backdata.ts', 'utf8');
 const deterministic = readFileSync('services/deterministicEstimate.ts', 'utf8');
@@ -35,6 +36,14 @@ test('marketplace roles, tiers and project domains remain in the unified candida
 
 test('consumer and supplier workflow modes are exposed in the front UI', () => {
   for (const token of ['SIMPLE','COMPARE','TENDER','REGISTER_BID','AUTOMATION','PLATFORM']) assert.match(marketplaceUi, new RegExp(token));
+});
+
+test('site evidence input is wired from App into bridge-bound project details', () => {
+  for (const token of ['lotBoundaryVerified','buildingPlacementVerified','roadRelationVerified','roadElevationVerified','vehicleAccessVerified','parkingSpaces','PARKING_TO_ENTRANCE','PLAN','ROAD_PHOTO','PARKING_PHOTO']) assert.match(siteInput, new RegExp(token));
+  assert.match(app, /<SiteContextInput value=\{siteContext\} onChange=\{setSiteContext\}/);
+  assert.match(app, /const detailsWithSite = siteContext \? \{ \.\.\.details, siteContext \} : details/);
+  assert.match(bridge, /siteContextForBridge/);
+  assert.match(bridge, /\.\.\.evidencePayload\(details\)/);
 });
 
 test('client/internal estimate separation contract remains explicit', () => {
