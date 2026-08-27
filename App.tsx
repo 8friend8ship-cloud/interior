@@ -100,7 +100,7 @@ const App: React.FC = () => {
       try {
         const deterministicPlan = generateDeterministicProjectPlan(details);
         const bridgeEstimate = await fetchInteriorEstimateBundle(details, marketplaceContext);
-        const finalPlan = mergeBridgeEstimate(deterministicPlan, bridgeEstimate);
+        const finalPlan = mergeBridgeEstimate(deterministicPlan, bridgeEstimate, Number(details.area || 0));
         setBridgeStatus(bridgeEstimate);
 
         if (details.projectScope === 'bathroom' || details.projectScope === 'sash') {
