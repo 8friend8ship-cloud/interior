@@ -7,6 +7,7 @@ const service = readFileSync('services/geminiService.ts', 'utf8');
 const marketplace = readFileSync('contracts/estimateMarketplace.ts', 'utf8');
 const marketplaceUi = readFileSync('components/EstimateMarketplaceMode.tsx', 'utf8');
 const connectedDetails = readFileSync('components/ConnectedEstimateDetails.tsx', 'utf8');
+const apiBridge = readFileSync('api/interior-backdata.ts', 'utf8');
 const deterministic = readFileSync('services/deterministicEstimate.ts', 'utf8');
 const bridge = readFileSync('services/interiorBackdataBridge.ts', 'utf8');
 const runtime = readFileSync('apps-script/InteriorMarketplaceRuntime_20260825.gs', 'utf8');
@@ -35,6 +36,14 @@ test('consumer result UI hides execution cost detail while supplier can inspect 
   assert.match(connectedDetails, /isSupplier && <td[^>]*>.*materialCost/s);
   assert.match(connectedDetails, /isSupplier && <td[^>]*>.*laborCost/s);
   assert.match(connectedDetails, /고객 견적 합계/);
+});
+
+test('consumer API response recursively strips internal cost and margin fields', () => {
+  assert.match(apiBridge, /CONSUMER_PRIVATE_FIELDS/);
+  for (const token of ['executionCost','executionUnitPrice','margin','marginRate','internalNote','subcontractorCost','materialCost','laborCost']) assert.match(apiBridge, new RegExp(token));
+  assert.match(apiBridge, /sanitizeConsumerValue/);
+  assert.match(apiBridge, /role !== 'SUPPLIER'/);
+  assert.match(apiBridge, /INTERIOR_BACKDATA_BRIDGE_V3_CONSUMER_SANITIZED_20260827/);
 });
 
 test('fallback does not fabricate a priced estimate from the 32-pyeong sample', () => {
