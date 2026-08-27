@@ -7,6 +7,8 @@ const app = readFileSync('App.tsx', 'utf8');
 const service = readFileSync('services/geminiService.ts', 'utf8');
 const marketplace = readFileSync('contracts/estimateMarketplace.ts', 'utf8');
 const marketplaceUi = readFileSync('components/EstimateMarketplaceMode.tsx', 'utf8');
+const requestUi = readFileSync('components/EstimateRequestForm.tsx', 'utf8');
+const requestService = readFileSync('services/estimateRequest.ts', 'utf8');
 const siteInput = readFileSync('components/SiteContextInput.tsx', 'utf8');
 const connectedDetails = readFileSync('components/ConnectedEstimateDetails.tsx', 'utf8');
 const apiBridge = readFileSync('api/interior-backdata.ts', 'utf8');
@@ -38,10 +40,19 @@ test('consumer and supplier workflow modes are exposed in the front UI', () => {
   for (const token of ['SIMPLE','COMPARE','TENDER','REGISTER_BID','AUTOMATION','PLATFORM']) assert.match(marketplaceUi, new RegExp(token));
 });
 
+test('dynamic estimate request form is wired and blocks incomplete required fields', () => {
+  assert.match(app, /<EstimateRequestForm context=\{marketplaceContext\} value=\{estimateRequest\} onChange=\{setEstimateRequest\}/);
+  assert.match(app, /!estimateRequest\.completedRequiredFields/);
+  assert.match(app, /estimateRequest,/);
+  for (const token of ['COMPARE','TENDER','REGISTER_BID','AUTOMATION','compareCount','tenderDeadline','bidPackage','providerRegistration','pricingProfile']) assert.match(requestService, new RegExp(token));
+  assert.match(requestService, /resolveEstimateRequestRoute/);
+  assert.match(requestUi, /남은 필수항목/);
+});
+
 test('site evidence input is wired from App into bridge-bound project details', () => {
   for (const token of ['lotBoundaryVerified','buildingPlacementVerified','roadRelationVerified','roadElevationVerified','vehicleAccessVerified','parkingSpaces','PARKING_TO_ENTRANCE','PLAN','ROAD_PHOTO','PARKING_PHOTO']) assert.match(siteInput, new RegExp(token));
   assert.match(app, /<SiteContextInput value=\{siteContext\} onChange=\{setSiteContext\}/);
-  assert.match(app, /const detailsWithSite = siteContext \? \{ \.\.\.details, siteContext \} : details/);
+  assert.match(app, /\.\.\.\(siteContext \? \{ siteContext \} : \{\}\)/);
   assert.match(bridge, /siteContextForBridge/);
   assert.match(bridge, /\.\.\.evidencePayload\(details\)/);
 });
