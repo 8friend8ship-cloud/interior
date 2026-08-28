@@ -1,0 +1,14 @@
+{
+  "contractId": "FRONTAPP_REVIEW_GATE_V1_20260828",
+  "appId": "APP_INTERIOR",
+  "templateSheet": "WEBAPP_TEMPLATE_06",
+  "canonicalSourceRepo": "8friend8ship-cloud/Analyzer-12.09",
+  "canonicalContractPath": "contracts/frontapp-review-gate-v1.json",
+  "canonicalAppsScriptPath": "apps-script/frontappReviewGate.gs",
+  "canonicalSourceCommit": "7ae9c99fe5f947e6759d7325da977d4f21cf7eb9",
+  "requiredTabs": ["GEMINI_REVIEW","ASSET_QA_REQUIREMENTS","ASSET_QA_QUEUE","WORKFLOW_CROSSCHECK"],
+  "promotionRule": "BLOCK unless text review PASS, all used assets PASS, critical crosscheck PASS, and claimed runtime/delivery has verified readback.",
+  "providerPolicy": "No paid Gemini Developer API auto-default; missing review evidence remains PENDING/BLOCK.",
+  "appSpecificChecks": ["estimate and numeric evidence","material/trade terminology","customer-facing claim safety","space/material image consistency"],
+  "runtimeStatus": "SOURCE_CONTRACT_LINKED_LIVE_APPS_SCRIPT_RUNTIME_PENDING"
+}
