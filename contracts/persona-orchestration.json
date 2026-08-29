@@ -1,0 +1,28 @@
+{
+  "contractId": "APP_INTERIOR_PERSONA_ORCHESTRATION_POINTER_V1",
+  "appId": "APP_INTERIOR",
+  "canonicalRepo": "8friend8ship-cloud/Analyzer-12.09",
+  "canonicalHeadCommit": "a11429ed7f39ebafefc2bee0589b800b4b1185ab",
+  "canonicalGate": {
+    "path": "apps-script/personaOrchestrationGate.gs",
+    "blobSha": "948c056e6d175b5b709b53955abdd3b83869b9c3"
+  },
+  "factory": {
+    "path": "apps-script/personaOrchestrator.gs",
+    "blobSha": "a3e8ebb0400ffb19bb8cc83e88ab2950be4e7320"
+  },
+  "contract": {
+    "path": "contracts/persona-orchestration-v1.json",
+    "blobSha": "71f4082431816521209ed48726ce08ca290f3e64"
+  },
+  "domainPolicy": {
+    "roles": ["interior_designer","estimator","site_supervision_guide","client_guide","narrator"],
+    "expertise": ["interior_design","estimate","material","construction","customer_guidance"],
+    "visiblePersona": "central_role_detection_then_vtube_if_required",
+    "voiceLanguage": "required_when_spoken_or_localized"
+  },
+  "scheduler": "REUSE_EXISTING_5M_FACTORY_WAKE_DUE_EVERY_24H",
+  "promotion": "FAIL_CLOSED_CANONICAL_GATE",
+  "paidGeminiDeveloperApiDefault": false,
+  "liveBoundAppsScript": "PENDING_READBACK"
+}
