@@ -44,7 +44,7 @@ test('dynamic estimate request form is wired and blocks incomplete required fiel
   assert.match(app, /<EstimateRequestForm context=\{marketplaceContext\} value=\{estimateRequest\} onChange=\{setEstimateRequest\}/);
   assert.match(app, /!estimateRequest\.completedRequiredFields/);
   assert.match(app, /estimateRequest,/);
-  for (const token of ['COMPARE','TENDER','REGISTER_BID','AUTOMATION','compareCount','tenderDeadline','bidPackage','providerRegistration','pricingProfile']) assert.match(requestService, new RegExp(token));
+  for (const token of ['COMPARE','TENDER','REGISTER_BID','AUTOMATION','compareCount','tenderDeadline','bidPackage','providerRegistration','pricingProfile','materialGrade']) assert.match(requestService, new RegExp(token));
   assert.match(requestService, /resolveEstimateRequestRoute/);
   assert.match(requestUi, /남은 필수항목/);
 });
@@ -73,6 +73,31 @@ test('consumer result UI hides execution cost detail while supplier can inspect 
   assert.match(connectedDetails, /isSupplier && <td[^>]*>.*materialCost/s);
   assert.match(connectedDetails, /isSupplier && <td[^>]*>.*laborCost/s);
   assert.match(connectedDetails, /고객 견적 합계/);
+});
+
+test('verified cost range requires evidence and the front shows its assumptions', () => {
+  const { normalizeVerifiedCostRange } = loadBridgeRuntime();
+  const good = normalizeVerifiedCostRange({
+    minTotal: 42000000,
+    maxTotal: 47000000,
+    currency: 'KRW',
+    priceAsOf: '2026-08-31',
+    evidenceIds: ['PRICE_001', 'LABOR_001'],
+    assumptions: ['40평', 'standard 자재등급'],
+  });
+  assert.deepEqual(good, {
+    minTotal: 42000000,
+    maxTotal: 47000000,
+    currency: 'KRW',
+    priceAsOf: '2026-08-31',
+    evidenceIds: ['PRICE_001', 'LABOR_001'],
+    assumptions: ['40평', 'standard 자재등급'],
+  });
+  assert.equal(normalizeVerifiedCostRange({ minTotal: 42000000, maxTotal: 47000000, priceAsOf: '2026-08-31' }), null);
+  assert.equal(normalizeVerifiedCostRange({ minTotal: 47000000, maxTotal: 42000000, priceAsOf: '2026-08-31', evidenceIds:['PRICE_001'] }), null);
+  assert.match(connectedDetails, /검증 비용 범위/);
+  assert.match(connectedDetails, /verifiedCostRange\.assumptions/);
+  assert.match(bridge, /front never/);
 });
 
 test('consumer API response recursively strips internal cost and margin fields', () => {
