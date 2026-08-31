@@ -1,11 +1,13 @@
 import type { EstimateMarketplaceContext, RequestFormQuestion, RequestFormSchema } from '../contracts/estimateMarketplace';
-import type { EstimateRequestDraft, EstimateRequestRoute, EstimateRequestValidation } from '../contracts/estimateRequest';
+import type { EstimateMaterialGrade, EstimateRequestDraft, EstimateRequestRoute, EstimateRequestValidation } from '../contracts/estimateRequest';
 
 const q = (question: RequestFormQuestion): RequestFormQuestion => question;
+const MATERIAL_GRADES: EstimateMaterialGrade[] = ['budget', 'standard', 'high_end'];
 
 export function buildEstimateRequestSchema(context: EstimateMarketplaceContext): RequestFormSchema {
   const baseQuestions: RequestFormQuestion[] = [
     q({ questionId:'region', canonicalField:'region', label:'시공 지역', type:'TEXT', required:true, source:'BASE', privacyClass:'CUSTOMER' }),
+    q({ questionId:'materialGrade', canonicalField:'materialGrade', label:'자재 등급', type:'SELECT', required:true, options:MATERIAL_GRADES, source:'BASE', privacyClass:'CUSTOMER' }),
     q({ questionId:'contactMethod', canonicalField:'contactMethod', label:'견적 회신 방법', type:'SELECT', required:true, options:['APP','EMAIL','PHONE'], source:'BASE', privacyClass:'CUSTOMER' }),
     q({ questionId:'desiredDate', canonicalField:'desiredDate', label:'희망 착공일', type:'DATE', required:false, source:'BASE', privacyClass:'CUSTOMER' }),
     q({ questionId:'siteVisit', canonicalField:'siteVisit', label:'현장 방문 필요', type:'CHECKBOX', required:false, source:'BASE', privacyClass:'CUSTOMER' }),
@@ -31,7 +33,7 @@ export function buildEstimateRequestSchema(context: EstimateMarketplaceContext):
   return {
     formSchemaId: `${context.userRole}_${context.consumerMode || context.supplierMode || 'DEFAULT'}_${context.projectDomain || 'RESIDENTIAL_INTERIOR'}`,
     providerId: context.providerId,
-    version: 'ESTIMATE_REQUEST_V1_20260827',
+    version: 'ESTIMATE_REQUEST_V2_20260831',
     baseQuestions,
     conditionalQuestions,
     requiredAttachments: context.consumerMode === 'TENDER' ? ['PLAN','SITE_PHOTO'] : [],
@@ -54,10 +56,13 @@ export function validateEstimateRequest(schema: RequestFormSchema, draft: Estima
 export function resolveEstimateRequestRoute(context: EstimateMarketplaceContext, draft: EstimateRequestDraft): EstimateRequestRoute {
   const schema = buildEstimateRequestSchema(context);
   const region = String(draft.region || draft.answers.region || '').trim();
+  const requestedGrade = String(draft.materialGrade || draft.answers.materialGrade || '').trim() as EstimateMaterialGrade;
+  const materialGrade: EstimateMaterialGrade = MATERIAL_GRADES.includes(requestedGrade) ? requestedGrade : 'standard';
   const mode: EstimateRequestRoute['mode'] = context.providerId ? 'PROVIDER' : context.templateMode === 'USER_CUSTOM' ? 'CUSTOM' : 'STANDARD';
   return {
-    routeId: `${region || 'UNROUTED'}:${context.providerId || 'STANDARD'}:${schema.formSchemaId}`,
+    routeId: `${region || 'UNROUTED'}:${materialGrade}:${context.providerId || 'STANDARD'}:${schema.formSchemaId}`,
     region,
+    materialGrade,
     providerId: context.providerId,
     mode,
     schema,
