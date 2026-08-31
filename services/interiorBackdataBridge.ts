@@ -20,7 +20,17 @@ export interface QuantityLineageQa {
   checkedItems: number;
 }
 
+export interface VerifiedEstimateCostRange {
+  minTotal: number;
+  maxTotal: number;
+  currency: string;
+  priceAsOf: string;
+  evidenceIds: string[];
+  assumptions: string[];
+}
+
 type ProjectWithSite = ProjectDetails & { siteContext?: InteriorSiteContext };
+type PlanWithVerifiedRange = GeneratedPlan & { verifiedCostRange?: VerifiedEstimateCostRange };
 
 const callBridge = async (action: InteriorBridgeAction, payload: Record<string, unknown>): Promise<InteriorBridgeResult> => {
   try {
@@ -112,13 +122,36 @@ export function validateBridgeQuantityLineage(costEstimate: any[], targetPy?: nu
   return { ok: true, checkedItems: checked || costEstimate.length };
 }
 
+/**
+ * Cost ranges are accepted only when the backend supplies explicit min/max,
+ * a price-as-of timestamp and at least one evidence ID. The front never
+ * invents a +/- percentage around a point estimate.
+ */
+export function normalizeVerifiedCostRange(input: any): VerifiedEstimateCostRange | null {
+  if (!input || typeof input !== 'object') return null;
+  const minTotal = Number(input.minTotal ?? input.min ?? input.low);
+  const maxTotal = Number(input.maxTotal ?? input.max ?? input.high);
+  const currency = String(input.currency || 'KRW').trim();
+  const priceAsOf = String(input.priceAsOf || input.price_as_of || '').trim();
+  const evidenceIds = Array.isArray(input.evidenceIds ?? input.evidence_ids)
+    ? (input.evidenceIds ?? input.evidence_ids).map((v: unknown) => String(v || '').trim()).filter(Boolean)
+    : [];
+  const assumptions = Array.isArray(input.assumptions)
+    ? input.assumptions.map((v: unknown) => String(v || '').trim()).filter(Boolean)
+    : [];
+
+  if (!Number.isFinite(minTotal) || !Number.isFinite(maxTotal) || minTotal < 0 || maxTotal < minTotal) return null;
+  if (!priceAsOf || evidenceIds.length === 0) return null;
+  return { minTotal, maxTotal, currency, priceAsOf, evidenceIds, assumptions };
+}
+
 export function mergeBridgeEstimate(base: GeneratedPlan, result: InteriorBridgeResult, targetPy?: number): GeneratedPlan {
   if (!result.ok) return base;
   const value = unwrap(result);
   const estimate = value.t2 || value.estimate || value.plan || value.result || value;
   if (!estimate || typeof estimate !== 'object') return base;
 
-  const next: GeneratedPlan = { ...base };
+  const next: PlanWithVerifiedRange = { ...base };
   if (Array.isArray(estimate.costEstimate) && estimate.costEstimate.length) {
     const lineage = validateBridgeQuantityLineage(estimate.costEstimate, targetPy);
     if (!lineage.ok) {
@@ -131,6 +164,8 @@ export function mergeBridgeEstimate(base: GeneratedPlan, result: InteriorBridgeR
     }
     next.costEstimate = estimate.costEstimate;
   }
+  const verifiedCostRange = normalizeVerifiedCostRange(estimate.verifiedCostRange || estimate.costRange);
+  if (verifiedCostRange) next.verifiedCostRange = verifiedCostRange;
   if (Array.isArray(estimate.materialDetailSheet) && estimate.materialDetailSheet.length) next.materialDetailSheet = estimate.materialDetailSheet as MaterialDetailItem[];
   if (Array.isArray(estimate.projectSchedule) && estimate.projectSchedule.length) next.projectSchedule = estimate.projectSchedule as SchedulePhase[];
   if (estimate.designConcept) next.designConcept = { ...base.designConcept, ...estimate.designConcept };
