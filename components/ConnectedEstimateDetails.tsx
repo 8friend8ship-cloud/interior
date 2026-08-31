@@ -1,12 +1,14 @@
 import React from 'react';
 import type { GeneratedPlan } from '../types';
-import type { InteriorBridgeResult } from '../services/interiorBackdataBridge';
+import type { InteriorBridgeResult, VerifiedEstimateCostRange } from '../services/interiorBackdataBridge';
 import { loadMarketplaceContext } from '../services/estimateMarketplace';
 
 interface Props {
   plan: GeneratedPlan;
   bridgeStatus?: InteriorBridgeResult | null;
 }
+
+type PlanWithVerifiedRange = GeneratedPlan & { verifiedCostRange?: VerifiedEstimateCostRange };
 
 const money = (value: number | undefined | null) => {
   const amount = Number(value || 0);
@@ -20,7 +22,9 @@ export const ConnectedEstimateDetails: React.FC<Props> = ({ plan, bridgeStatus }
   const materialTotal = items.reduce((sum, item) => sum + Number(item.materialCost || 0), 0);
   const laborTotal = items.reduce((sum, item) => sum + Number(item.laborCost || 0), 0);
   const grandTotal = items.reduce((sum, item) => sum + Number(item.totalPrice || 0), 0);
+  const verifiedCostRange = (plan as PlanWithVerifiedRange).verifiedCostRange;
   const hasVerifiedPrice = bridgeStatus?.ok && items.length > 0 && grandTotal > 0;
+  const hasVerifiedRange = Boolean(bridgeStatus?.ok && verifiedCostRange);
 
   return (
     <section className="mb-6 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
@@ -38,6 +42,23 @@ export const ConnectedEstimateDetails: React.FC<Props> = ({ plan, bridgeStatus }
       {!hasVerifiedPrice && (
         <div className="mt-4 rounded-xl border border-amber-100 bg-amber-50 p-4 text-sm text-amber-900">
           현재 검증된 전체 BOM·단가가 충분하지 않습니다. 부족한 항목은 임의 가격으로 채우지 않으며, 백데이터가 확인되면 자동 반영됩니다.
+        </div>
+      )}
+
+      {hasVerifiedRange && verifiedCostRange && (
+        <div className="mt-4 rounded-xl border border-indigo-100 bg-indigo-50 p-4">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div>
+              <div className="text-xs font-bold text-indigo-700">검증 비용 범위</div>
+              <div className="mt-1 text-lg font-bold text-slate-900">{money(verifiedCostRange.minTotal)} ~ {money(verifiedCostRange.maxTotal)}</div>
+            </div>
+            <div className="text-right text-[11px] text-slate-500">기준일 {verifiedCostRange.priceAsOf}<br />근거 {verifiedCostRange.evidenceIds.length}건</div>
+          </div>
+          {verifiedCostRange.assumptions.length > 0 && (
+            <div className="mt-3 border-t border-indigo-100 pt-2 text-xs text-slate-600">
+              <strong>가정:</strong> {verifiedCostRange.assumptions.join(' · ')}
+            </div>
+          )}
         </div>
       )}
 
