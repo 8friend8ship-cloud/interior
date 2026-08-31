@@ -13,9 +13,22 @@ function loadRuntime() {
 }
 
 const baseDraft = {
-  formSchemaId: '', version: 'ESTIMATE_REQUEST_V1_20260827', region: '서울',
-  answers: { region: '서울', contactMethod: 'APP' }, attachmentKinds: [], completedRequiredFields: false,
+  formSchemaId: '', version: 'ESTIMATE_REQUEST_V2_20260831', region: '서울', materialGrade: 'standard',
+  answers: { region: '서울', materialGrade: 'standard', contactMethod: 'APP' }, attachmentKinds: [], completedRequiredFields: false,
 };
+
+test('base request requires canonical region and material grade', () => {
+  const { buildEstimateRequestSchema, validateEstimateRequest, resolveEstimateRequestRoute } = loadRuntime();
+  const context = { userRole:'CONSUMER', tier:'FREE', consumerMode:'SIMPLE', projectDomain:'RESIDENTIAL_INTERIOR', buildingUse:'RESIDENTIAL', templateMode:'HOMEDESIGN_SIMPLE' };
+  const schema = buildEstimateRequestSchema(context);
+  const grade = schema.baseQuestions.find(q => q.questionId === 'materialGrade');
+  assert.deepEqual(grade?.options, ['budget','standard','high_end']);
+  assert.equal(validateEstimateRequest(schema, { ...baseDraft, answers: { region:'서울', contactMethod:'APP' } }).ok, false);
+  const route = resolveEstimateRequestRoute(context, baseDraft);
+  assert.equal(route.region, '서울');
+  assert.equal(route.materialGrade, 'standard');
+  assert.match(route.routeId, /^서울:standard:/);
+});
 
 test('consumer compare mode adds compare-count and validates it', () => {
   const { buildEstimateRequestSchema, validateEstimateRequest, resolveEstimateRequestRoute } = loadRuntime();
@@ -28,6 +41,7 @@ test('consumer compare mode adds compare-count and validates it', () => {
   const route = resolveEstimateRequestRoute(context, complete);
   assert.equal(route.mode, 'STANDARD');
   assert.equal(route.region, '서울');
+  assert.equal(route.materialGrade, 'standard');
 });
 
 test('consumer tender mode requires deadline, bid package, plan and site photo', () => {
@@ -45,9 +59,10 @@ test('supplier automation requires pricing profile and provider routing stays ex
   const context = { userRole:'SUPPLIER', tier:'PRO', supplierMode:'AUTOMATION', providerId:'PROVIDER_001', projectDomain:'COMMERCIAL_INTERIOR', buildingUse:'OFFICE', templateMode:'USER_CUSTOM' };
   const schema = buildEstimateRequestSchema(context);
   assert.ok(schema.conditionalQuestions.some(q => q.questionId === 'pricingProfile'));
-  const complete = { ...baseDraft, providerId:'PROVIDER_001', answers: { ...baseDraft.answers, pricingProfile:'OFFICE_STD_V3' } };
+  const complete = { ...baseDraft, providerId:'PROVIDER_001', materialGrade:'high_end', answers: { ...baseDraft.answers, materialGrade:'high_end', pricingProfile:'OFFICE_STD_V3' } };
   assert.equal(validateEstimateRequest(schema, complete).ok, true);
   const route = resolveEstimateRequestRoute(context, complete);
   assert.equal(route.mode, 'PROVIDER');
   assert.equal(route.providerId, 'PROVIDER_001');
+  assert.equal(route.materialGrade, 'high_end');
 });
