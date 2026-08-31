@@ -506,6 +506,15 @@ export const UserInputForm: React.FC<UserInputFormProps> = ({ onSubmit, error })
 
   const handleDemoSubmit = (e: React.MouseEvent) => {
     e.preventDefault();
+    const formatDate = (date: Date) => [
+      date.getFullYear(),
+      String(date.getMonth() + 1).padStart(2, '0'),
+      String(date.getDate()).padStart(2, '0')
+    ].join('-');
+    const demoStart = new Date();
+    demoStart.setDate(demoStart.getDate() + 7);
+    const demoMoveIn = new Date(demoStart);
+    demoMoveIn.setDate(demoMoveIn.getDate() + 30);
     const demoScopes: ProjectScopeFlags = {
       sash: true, door: true, bath1: true, bath2: true, 
       tile: true, wallpaper: true, flooring: true,
@@ -518,8 +527,8 @@ export const UserInputForm: React.FC<UserInputFormProps> = ({ onSubmit, error })
         area: 32,
         address: "서울시 강남구 삼성동 123",
         requests: "데모 모드 (전체 인테리어 예시)",
-        targetDate: "2024-04-01",
-        moveInDate: "2024-04-30",
+        targetDate: formatDate(demoStart),
+        moveInDate: formatDate(demoMoveIn),
         budget: 4000, 
         image: { data: MOCK_IMAGE_BASE64, mimeType: "image/gif" },
         roomCount: 3,
