@@ -1,0 +1,117 @@
+{
+  "version": "INTERIOR_FULL_BOM_BACKDATA_V1_20260825",
+  "policy": {
+    "manualSamplePricesAreAuthoritative": false,
+    "mockAreaScalingAllowedForPricedEstimate": false,
+    "verifiedProjectBomRequiredForPricedEstimate": true,
+    "userProjectOverridesStayIsolated": true
+  },
+  "pipeline": [
+    "PROJECT_INPUT",
+    "PLAN_OR_MEASUREMENT_PARSE",
+    "PYTHON_TAKEOFF_AND_PLAN_CROSSCHECK",
+    "TRADE_SCOPE_EXPANSION",
+    "FULL_BOM_EXPANSION",
+    "QUEENS_MATERIAL_LABOR_RATE_LOOKUP",
+    "SEED_NORMALIZATION",
+    "T1_INTERNAL_ESTIMATE",
+    "CLIENT_SAFE_T2",
+    "USER_CUSTOM_TEMPLATE_PROJECTION",
+    "READBACK_X2"
+  ],
+  "takeoff": {
+    "required": [
+      "PROJECT_ID",
+      "ROOM_ID",
+      "TRADE",
+      "MEASURE_SOURCE",
+      "AREA_M2",
+      "LENGTH_M",
+      "COUNT",
+      "HEIGHT_M",
+      "TAKEOFF_FORMULA",
+      "WASTE_FACTOR",
+      "QA_STATUS"
+    ]
+  },
+  "bomItem": {
+    "required": [
+      "BOM_ID",
+      "TRADE",
+      "SUBTRADE",
+      "ROOM",
+      "ITEM_ROLE",
+      "MATERIAL_ID",
+      "MATERIAL_NAME",
+      "BRAND",
+      "MODEL",
+      "SPEC",
+      "UNIT",
+      "BASE_QTY",
+      "WASTE_FACTOR",
+      "ORDER_QTY",
+      "RELATION_PARENT_ID",
+      "INSTALL_METHOD",
+      "PRICE_AS_OF",
+      "PRICE_SOURCE",
+      "PRODUCT_URL",
+      "PRODUCT_ID",
+      "SELLER",
+      "QTAG",
+      "UNIT_PRICE",
+      "MATERIAL_AMOUNT",
+      "LABOR_RULE_ID",
+      "LABOR_CREW",
+      "PRODUCTIVITY",
+      "LABOR_QTY",
+      "LABOR_UNIT_RATE",
+      "LABOR_AMOUNT",
+      "LOGISTICS_AMOUNT",
+      "DISPOSAL_AMOUNT",
+      "QA_STATUS"
+    ],
+    "itemRoles": [
+      "PRIMARY_MATERIAL",
+      "SUB_MATERIAL",
+      "ADHESIVE",
+      "MORTAR_GROUT",
+      "FASTENER_HARDWARE",
+      "SEALANT_WATERPROOF",
+      "PROTECTION",
+      "CONSUMABLE",
+      "TOOL_CONSUMABLE",
+      "LOGISTICS_LIFTING",
+      "WASTE_DISPOSAL"
+    ]
+  },
+  "examplesOfRequiredExpansion": {
+    "flooring": ["floor finish", "adhesive", "primer", "leveling material", "transition profile", "protective sheet", "consumables"],
+    "tile": ["tile", "tile adhesive", "mortar", "grout", "waterproofing", "corner/profile", "spacer", "sealant", "cutting consumables"],
+    "carpentry": ["board", "stud/runner or timber", "insulation", "foam", "screw/fastener", "adhesive", "profile", "consumables"],
+    "wallpaper": ["wallpaper", "paste/adhesive", "lining/nonwoven", "joint material", "protection", "consumables"],
+    "electrical": ["device/fixture", "wire/cable", "conduit", "box", "connector", "breaker", "fastener", "consumables"]
+  },
+  "userCustomProjection": {
+    "input": [
+      "USER_PROFILE_ID",
+      "PROJECT_ID",
+      "TEMPLATE_ID",
+      "TRADE_ORDER",
+      "VISIBLE_COLUMNS",
+      "MATERIAL_PREFERENCE",
+      "BRAND_PREFERENCE",
+      "PRICE_POLICY",
+      "MARGIN_POLICY",
+      "NOTES"
+    ],
+    "rule": "Project BOM is calculated first. User settings only select/order/override allowed project-scoped fields; they do not replace the canonical BOM engine.",
+    "clientForbidden": [
+      "EXEC_UNIT_PRICE",
+      "EXEC_AMOUNT",
+      "MARGIN",
+      "MARGIN_RATE",
+      "INTERNAL_NOTE",
+      "SUBCONTRACTOR_COST"
+    ]
+  }
+}

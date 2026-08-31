@@ -1,0 +1,45 @@
+{
+  "version": "INTERIOR_TEMPLATE_REGISTRY_V1_20260825",
+  "stages": [
+    "QUEENS",
+    "SEED",
+    "T1",
+    "T2",
+    "DEDICATED_TEMPLATE",
+    "CUSTOM_TEMPLATE",
+    "PERSONALIZED_VERSION"
+  ],
+  "standardTemplates": [
+    {"templateId":"HOMEDESIGN_SIMPLE","scope":"GENERAL","tier":"FREE","clientSafe":true},
+    {"templateId":"GENOVY_DETAIL","scope":"PROJECT","tier":"PRO","clientSafe":true},
+    {"templateId":"HOMEDESIGN_COST_MARGIN","scope":"USER","tier":"PRO","clientSafe":false}
+  ],
+  "dedicatedTemplateRules": {
+    "consumerPro": ["COMPARE","TENDER","BOQ","FINISH_SCHEDULE","CONSTRUCTION_SCHEDULE","DRAWING","RENDER","VIDEO"],
+    "supplierPro": ["AUTO_QUOTE","BOQ","FINISH_SCHEDULE","CONSTRUCTION_SCHEDULE","DRAWING","RENDER","VIDEO","DEDICATED_APP","PUBLISH"]
+  },
+  "customTemplate": {
+    "sources": ["LOCAL_UPLOAD","DRIVE_REFERENCE","USER_CUSTOM"],
+    "formats": ["XLS","XLSX","CSV","DOC","DOCX"],
+    "output": ["XLSX","DOCX","PDF"],
+    "versionPattern": "USER_CUSTOM_<userProfileId>_<yyyyMMdd_HHmmss>",
+    "isolation": "USER_OR_PROJECT_ONLY"
+  },
+  "learningGate": {
+    "generalPromotionMinimumValidatedProjects": 3,
+    "blockOnFormulaErrors": ["#REF!","#N/A","#DIV/0!"],
+    "noPersonalBackpropagation": true
+  },
+  "lineage": [
+    "REQUEST_ID",
+    "PROJECT_ID",
+    "QUEENS_ID",
+    "SEED_ID",
+    "T1_ID",
+    "T2_ID",
+    "TEMPLATE_ID",
+    "TEMPLATE_VERSION",
+    "USER_PROFILE_ID",
+    "CONSTRUCTION_SCHEDULE_ID"
+  ]
+}

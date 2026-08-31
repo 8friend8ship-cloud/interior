@@ -2,63 +2,49 @@ import type { GeneratedPlan, ProjectDetails } from '../types';
 import { MOCK_BATHROOM_PLAN, MOCK_GENERATED_PLAN } from '../constants/mockData';
 
 const clone = <T>(value: T): T => JSON.parse(JSON.stringify(value));
-const round1000 = (value: number) => Math.round(value / 1000) * 1000;
 
+/**
+ * Safe fallback only.
+ *
+ * This function MUST NOT create a priced estimate from the small local
+ * PRICE_TABLE / MATERIALS / LABOR samples or by scaling a 32-pyeong mock.
+ * A priced detailed estimate is valid only after the live backdata path has
+ * produced a verified project BOM/takeoff (Queens→Seed→Python/plan QA→T1→T2).
+ */
 export function generateDeterministicProjectPlan(details: ProjectDetails): GeneratedPlan {
   const base = clone(details.projectScope === 'bathroom' ? MOCK_BATHROOM_PLAN : MOCK_GENERATED_PLAN);
   const targetPy = Math.max(1, Number(details.area || 1));
-  const basePy = details.projectScope === 'bathroom' ? Math.max(1, targetPy) : 32;
-  const areaRatio = details.projectScope === 'bathroom' ? 1 : Math.max(0.35, Math.min(3.5, targetPy / basePy));
 
-  base.designConcept.title = `${targetPy}평 ${details.projectScope === 'bathroom' ? '욕실' : '인테리어'} 실행견적 · API-free T2`;
-  base.designConcept.description = `PTPL-PAUL-EXPERT-V1 기준 저장 템플릿과 면적·선택 공종을 사용한 결정형 실행견적입니다. 외부 생성형 API 없이 산출되며 현장 실측과 제품 확정 전에는 수량·단가 재검증이 필요합니다.`;
-  base.designConcept.keywords = Array.from(new Set([...(base.designConcept.keywords || []), 'API-free', 'BOM', '실행견적']));
+  base.designConcept.title = `${targetPy}평 ${details.projectScope === 'bathroom' ? '욕실' : '인테리어'} 견적 준비 · VERIFIED BOM REQUIRED`;
+  base.designConcept.description = [
+    '현재 화면은 안전 fallback입니다.',
+    '실제 상세견적은 도면/실측→공간·면적·길이→공종→주자재·부자재·소모품→로스·운반·폐기→노무·생산성까지 전체 BOM을 산출하고',
+    'Queens/Seed의 검증된 단가·제품·링크·가격시점과 대조한 뒤 T1/T2로 생성해야 합니다.',
+    '일부 로컬 샘플 단가나 32평 기준 견적의 면적배율로 가격을 생성하지 않습니다.'
+  ].join(' ');
+  base.designConcept.keywords = ['VERIFIED-BOM', 'PLAN-TAKEOFF', 'QUEENS-SEED', 'FAIL-CLOSED'];
 
-  base.costEstimate = base.costEstimate
-    .filter((item) => {
-      const flags = details.scopeFlags as any;
-      const text = `${item.category} ${item.item}`;
-      if (flags?.sash === false && /창호|샷시/.test(text)) return false;
-      if (flags?.electrical === false && /전기|조명|콘센트/.test(text)) return false;
-      if (flags?.wallpaper === false && /도배|벽지/.test(text)) return false;
-      if (flags?.flooring === false && /마루|바닥|장판/.test(text)) return false;
-      return true;
-    })
-    .map((item) => {
-      const scalable = item.unit === '평' || item.unit === '㎡' || item.unit === 'm2' || item.unit === '식';
-      const factor = scalable ? areaRatio : 1;
-      const quantity = item.unit === '평' ? Math.max(1, Math.round(targetPy * 10) / 10) : item.quantity;
-      const materialCost = round1000(Number(item.materialCost || 0) * factor);
-      const laborCost = round1000(Number(item.laborCost || 0) * factor);
-      const totalPrice = round1000(Number(item.totalPrice || materialCost + laborCost) * factor);
-      return {
-        ...item,
-        quantity,
-        materialCost,
-        laborCost,
-        totalPrice,
-        remarks: `${item.remarks || ''}${item.remarks ? ' · ' : ''}결정형 T2: 기준 32평 템플릿 대비 면적계수 ${areaRatio.toFixed(3)}`,
-      };
-    });
-
-  const total = base.costEstimate.reduce((sum, item) => sum + Number(item.totalPrice || 0), 0);
-  const budget = Number((details as any).budget || 0);
+  // Critical safety gate: do not expose mock/sample prices as a real estimate.
+  base.costEstimate = [];
+  base.materialDetailSheet = [];
+  base.projectSchedule = [];
   base.budgetAnalysis = {
-    isOverBudget: budget > 0 ? total > budget : false,
-    statusMessage: budget > 0
-      ? (total > budget ? `예상 총액 ${total.toLocaleString()}원으로 입력예산을 초과합니다.` : `예상 총액 ${total.toLocaleString()}원으로 입력예산 범위입니다.`)
-      : `예상 총액 ${total.toLocaleString()}원. 현장 실측 후 확정하세요.`,
-    costSavingTips: ['동일 규격 자재 묶음 발주', '공종별 실측 후 과다 물량 제거', '선택 공종만 유지하고 제외 공종은 견적에서 분리'],
+    isOverBudget: false,
+    statusMessage: '검증된 전체 BOM/단가 백데이터가 아직 연결되지 않아 금액 산출을 보류했습니다.',
+    costSavingTips: [
+      '도면/실측 기준 물량산출 완료',
+      '주자재+부자재+소모품 전체 BOM 생성',
+      '현재 단가·제품링크·노무 생산성 검증 후 견적 생성'
+    ],
   };
-
-  base.projectSchedule = base.projectSchedule?.length ? base.projectSchedule : [
-    { phase: '1', task: '현장실측·보양·철거', duration: '2~4일', startDate: '', endDate: '' },
-    { phase: '2', task: '설비·전기·목공·방수', duration: '5~10일', startDate: '', endDate: '' },
-    { phase: '3', task: '타일·도장·도배·바닥', duration: '5~10일', startDate: '', endDate: '' },
-    { phase: '4', task: '가구·기구·마감·검수', duration: '3~7일', startDate: '', endDate: '' },
-  ];
-  base.confidence = 'MEDIUM';
-  base.confidenceReason = '저장 템플릿·면적·선택 공종 기반 결정형 산출. API 의존 없음.';
-  base.correctionNeeded = '실측 치수, 실제 제품 모델, 현장 난이도, 운반/양중, 폐기물 조건을 최종 견적 전에 확인.';
+  base.confidence = 'LOW';
+  base.confidenceReason = 'VERIFIED_PROJECT_BOM_NOT_AVAILABLE_ON_FALLBACK';
+  base.correctionNeeded = [
+    'Queens MATERIAL_MASTER 및 BOM_RELATION 조회',
+    'Python/도면 대조 TAKEOFF 검증',
+    'Seed 정규화된 MATERIAL/LABOR/RATE 적용',
+    'T1 내부견적→CLIENT_SAFE T2 생성',
+    '사용자/프로젝트 전용 설정과 USER_CUSTOM 템플릿 반영'
+  ].join(' → ');
   return base;
 }
