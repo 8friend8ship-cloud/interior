@@ -26,6 +26,11 @@ def sha256_file(path: Path, chunk_size: int = 1024 * 1024) -> str:
     return digest.hexdigest()
 
 
+def read_prefix(path: Path, size: int = READ_PREFIX) -> bytes:
+    with path.open("rb") as fh:
+        return fh.read(size)
+
+
 def detect_public_container(prefix: bytes, suffix: str) -> dict[str, Any]:
     suffix = suffix.lower()
     if prefix.startswith(b"\xff\xd8\xff"):
@@ -72,7 +77,7 @@ def inventory_folder(folder: Path) -> dict[str, Any]:
 def probe_file(path: Path) -> dict[str, Any]:
     if not path.is_file():
         raise FileNotFoundError(path)
-    prefix = path.read_bytes()[:READ_PREFIX]
+    prefix = read_prefix(path)
     mime, _ = mimetypes.guess_type(path.name)
     return {
         "schema": "CENTRAL_INTERIOR_FILE_PROBE_V1",
