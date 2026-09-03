@@ -1,44 +1,56 @@
 {
   "contract_id": "INTERIOR_PLAN_FULL_PACKAGE_V1",
-  "version": "1.0-20260903",
+  "version": "1.1-20260903",
+  "canonical_skp": {
+    "repository": "8friend8ship-cloud/Analyzer-12.09",
+    "manifest_exporter": "sketchup/ruby/central_skp_manifest_exporter.rb",
+    "seed_builder": "python/central_skp_seed_builder.py",
+    "manifest_schema": "SKP_MODEL_MANIFEST_V1",
+    "seed_schema": "SKP_SEED_BUNDLE_V1",
+    "master_tabs": ["SKP_MODEL_MANIFEST", "SKP_SEED_LIBRARY", "SKP_OUTPUT_TEMPLATE", "SKP_RUNTIME_LOG"],
+    "logical_trigger": "TRG_SKETCHUP_LEARNING_REUSE_20260903",
+    "local_runner": "RUN-SKETCHUP-ASSET-001",
+    "dedicated_physical_trigger": false
+  },
   "project_policy": {
     "project_id_first": true,
     "drive_verified_gate": true,
     "reuse_last_good": true,
     "new_physical_trigger": false,
-    "existing_trigger": "TRG_FACTORY_INTERIOR_5M"
+    "full_package_trigger": "TRG_FACTORY_INTERIOR_5M"
   },
   "accepted_inputs": [
     "FLOORPLAN_IMAGE",
     "FLOORPLAN_PDF",
-    "SKETCHUP_3D",
-    "SKP_API_MANIFEST",
-    "D5_PROJECT_FOLDER_PROXY",
     "ROOM_DIMENSIONS",
+    "SKP_SEED_BUNDLE_V1",
+    "D5_WORKSPACE_RESOURCE_PROXY",
+    "D5_PROJECT_FOLDER_PROXY",
     "STYLE_BUDGET_REQUIREMENT"
   ],
   "learning_pipeline": [
-    "FILE_PROBE",
-    "SKETCHUP_API_OR_SDK_MANIFEST",
-    "D5_COMPLETE_FOLDER_INVENTORY",
-    "PYTHON_NORMALIZE",
-    "QUEENS_SOURCE_EVIDENCE",
-    "SEED_REGISTRY",
-    "TEMPLATE_MATCH",
+    "CENTRAL_PRECHECK",
+    "CANONICAL_SKP_BUNDLE_REUSE",
+    "D5_RESOURCE_OR_PROJECT_CLASSIFICATION",
+    "FLOORPLAN_SPATIAL_TRUTH",
+    "INTERIOR_PLAN_FULL_PACKAGE_SEED_V2",
+    "SKP_OUTPUT_TEMPLATE_MATCH",
     "OUTPUT_JOBS",
     "QA_X2",
     "DRIVE_READBACK",
     "EVOLUTION_WRITEBACK"
   ],
-  "outputs": {
-    "perspective_images": {"template_required": true},
-    "isometric_images": {"template_required": true},
-    "walkthrough_video_plan": {"template_required": true},
-    "estimate": {"quantity_lineage_required": true},
-    "material_list": {"quantity_lineage_required": true},
-    "finish_schedule": {"zone_lineage_required": true},
-    "material_board": {"rights_lineage_required": true},
-    "construction_schedule": {"predecessor_duration_lineage_required": true}
+  "output_templates": {
+    "normalized_floorplan": "SKPTPL_FLOORPLAN_V1",
+    "perspective_images": "SKPTPL_PERSPECTIVE_V1",
+    "isometric_images": "SKPTPL_ISOMETRIC_V1",
+    "walkthrough_video_plan": "SKPTPL_VIDEO_SCENE_V1",
+    "estimate": "SKPTPL_ESTIMATE_V1",
+    "material_list": "SKPTPL_MATERIAL_LIST_V1",
+    "finish_schedule": "SKPTPL_FINISH_LIST_V1",
+    "material_board": "SKPTPL_MATERIAL_BOARD_V1",
+    "construction_schedule": "SKPTPL_SCHEDULE_V1",
+    "client_proposal": "SKPTPL_CLIENT_PROPOSAL_V1"
   },
   "hard_gates": [
     "DIMENSION_TRUTH",
@@ -47,16 +59,24 @@
     "COLLISION_CLEARANCE",
     "SOURCE_RIGHTS",
     "ESTIMATE_QUANTITY_LINEAGE",
+    "NO_LLM_PRICE_GUESS",
+    "D5_NOT_GEOMETRY_TRUTH",
     "DRIVE_READBACK_X2"
   ],
+  "d5_modes": {
+    "workspace_resource": "Material/asset/HDR/LUT/gobo/render-reference Seed only; current Drive D5 WorkSpace evidence is this mode.",
+    "project_folder": "Requires actual .drs plus complete project folder evidence; render support only unless geometry is cross-verified against floorplan/SKP."
+  },
   "proprietary_format_policy": {
-    "skp": "Do not reverse-engineer proprietary binary. Extract structure through SketchUp Ruby/Desktop SDK and preserve raw file.",
-    "d5_drs": "Do not treat standalone .drs as complete project. Preserve entire project folder and use official import/LiveSync/export evidence plus folder proxy manifest."
+    "skp": "Do not duplicate or reverse-engineer raw SKP parsing in interior. Consume canonical Analyzer SKP manifest/seed bundle and preserve raw source.",
+    "d5_drs": "Do not decode unsupported .drs binary. Preserve complete project folder and use official D5/LiveSync/export evidence.",
+    "d5_workspace": "Do not infer project geometry from cached D5 resources."
   },
   "central_writeback": [
     "18_AGENT_INSTRUCTION",
     "34_CHAT_COMMAND_HISTORY",
     "35_INTERNAL_SEED_REGISTRY",
+    "36_AUTOMATION_TRIGGER_REGISTRY",
     "37_QUEENS_RESEARCH_RESULTS",
     "61_BACKEND_FUNCTION_CONTRACT",
     "63_EVOLUTION_CHANGELOG",
@@ -68,6 +88,10 @@
     "79_FUNCTION_DATA_USAGE_MAP",
     "83_TASK_PRECHECK_ASSET_MAP",
     "85_FILE_TYPE_TAXONOMY",
-    "93_RUNTIME_EVIDENCE_CONTROL"
+    "93_RUNTIME_EVIDENCE_CONTROL",
+    "SKP_MODEL_MANIFEST",
+    "SKP_SEED_LIBRARY",
+    "SKP_OUTPUT_TEMPLATE",
+    "SKP_RUNTIME_LOG"
   ]
 }
