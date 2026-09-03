@@ -12,6 +12,12 @@ module CentralAgent
       [point.x.to_mm, point.y.to_mm, point.z.to_mm]
     end
 
+    def options_hash(provider)
+      result = {}
+      provider.each_pair { |key, value| result[key] = value }
+      result
+    end
+
     def bounds_hash(bounds)
       {
         min_mm: point_mm(bounds.min),
@@ -58,11 +64,12 @@ module CentralAgent
 
     def export(path = nil)
       model = Sketchup.active_model
+      units = model.options['UnitsOptions']
       payload = {
         schema: 'CENTRAL_SKP_MANIFEST_V2',
         model_path: model.path,
         title: model.title,
-        units_options: model.options['UnitsOptions'].to_h,
+        units_options: options_hash(units),
         model_bounds: bounds_hash(model.bounds),
         entities: {
           root_count: model.entities.length,
