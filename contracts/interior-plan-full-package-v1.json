@@ -1,0 +1,73 @@
+{
+  "contract_id": "INTERIOR_PLAN_FULL_PACKAGE_V1",
+  "version": "1.0-20260903",
+  "project_policy": {
+    "project_id_first": true,
+    "drive_verified_gate": true,
+    "reuse_last_good": true,
+    "new_physical_trigger": false,
+    "existing_trigger": "TRG_FACTORY_INTERIOR_5M"
+  },
+  "accepted_inputs": [
+    "FLOORPLAN_IMAGE",
+    "FLOORPLAN_PDF",
+    "SKETCHUP_3D",
+    "SKP_API_MANIFEST",
+    "D5_PROJECT_FOLDER_PROXY",
+    "ROOM_DIMENSIONS",
+    "STYLE_BUDGET_REQUIREMENT"
+  ],
+  "learning_pipeline": [
+    "FILE_PROBE",
+    "SKETCHUP_API_OR_SDK_MANIFEST",
+    "D5_COMPLETE_FOLDER_INVENTORY",
+    "PYTHON_NORMALIZE",
+    "QUEENS_SOURCE_EVIDENCE",
+    "SEED_REGISTRY",
+    "TEMPLATE_MATCH",
+    "OUTPUT_JOBS",
+    "QA_X2",
+    "DRIVE_READBACK",
+    "EVOLUTION_WRITEBACK"
+  ],
+  "outputs": {
+    "perspective_images": {"template_required": true},
+    "isometric_images": {"template_required": true},
+    "walkthrough_video_plan": {"template_required": true},
+    "estimate": {"quantity_lineage_required": true},
+    "material_list": {"quantity_lineage_required": true},
+    "finish_schedule": {"zone_lineage_required": true},
+    "material_board": {"rights_lineage_required": true},
+    "construction_schedule": {"predecessor_duration_lineage_required": true}
+  },
+  "hard_gates": [
+    "DIMENSION_TRUTH",
+    "UNIT_SCALE",
+    "OPENING_FIXED_POINT",
+    "COLLISION_CLEARANCE",
+    "SOURCE_RIGHTS",
+    "ESTIMATE_QUANTITY_LINEAGE",
+    "DRIVE_READBACK_X2"
+  ],
+  "proprietary_format_policy": {
+    "skp": "Do not reverse-engineer proprietary binary. Extract structure through SketchUp Ruby/Desktop SDK and preserve raw file.",
+    "d5_drs": "Do not treat standalone .drs as complete project. Preserve entire project folder and use official import/LiveSync/export evidence plus folder proxy manifest."
+  },
+  "central_writeback": [
+    "18_AGENT_INSTRUCTION",
+    "34_CHAT_COMMAND_HISTORY",
+    "35_INTERNAL_SEED_REGISTRY",
+    "37_QUEENS_RESEARCH_RESULTS",
+    "61_BACKEND_FUNCTION_CONTRACT",
+    "63_EVOLUTION_CHANGELOG",
+    "69_MULTIMODAL_EXECUTION_ROUTER",
+    "70_MULTIMODAL_TEMPLATE_LIBRARY",
+    "75_ORCHESTRA_WORKFLOW_MAP",
+    "76_ASSET_PACK_FACTORY",
+    "77_TEMPLATE_EVOLUTION_FACTORY",
+    "79_FUNCTION_DATA_USAGE_MAP",
+    "83_TASK_PRECHECK_ASSET_MAP",
+    "85_FILE_TYPE_TAXONOMY",
+    "93_RUNTIME_EVIDENCE_CONTROL"
+  ]
+}
