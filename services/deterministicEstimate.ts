@@ -3,6 +3,7 @@ import { MOCK_BATHROOM_PLAN, MOCK_GENERATED_PLAN } from '../constants/mockData';
 
 const clone = <T>(value: T): T => JSON.parse(JSON.stringify(value));
 const round1000 = (value: number) => Math.round(value / 1000) * 1000;
+const round1 = (value: number) => Math.round(value * 10) / 10;
 
 export function generateDeterministicProjectPlan(details: ProjectDetails): GeneratedPlan {
   const base = clone(details.projectScope === 'bathroom' ? MOCK_BATHROOM_PLAN : MOCK_GENERATED_PLAN);
@@ -27,7 +28,14 @@ export function generateDeterministicProjectPlan(details: ProjectDetails): Gener
     .map((item) => {
       const scalable = item.unit === '평' || item.unit === '㎡' || item.unit === 'm2' || item.unit === '식';
       const factor = scalable ? areaRatio : 1;
-      const quantity = item.unit === '평' ? Math.max(1, Math.round(targetPy * 10) / 10) : item.quantity;
+
+      // 원본 템플릿의 공종별 기준 물량을 유지한 채 면적비로 스케일한다.
+      // 모든 '평' 항목을 targetPy로 덮어쓰지 않는다. 공종별 기준 물량 계보가 유지되어야
+      // 견적, BOM, SketchUp/Full Package 출력이 같은 수량 근거를 공유할 수 있다.
+      const quantity = (item.unit === '평' || item.unit === '㎡' || item.unit === 'm2')
+        ? Math.max(0.1, round1(Number(item.quantity || 0) * factor))
+        : item.quantity;
+
       const materialCost = round1000(Number(item.materialCost || 0) * factor);
       const laborCost = round1000(Number(item.laborCost || 0) * factor);
       const totalPrice = round1000(Number(item.totalPrice || materialCost + laborCost) * factor);
