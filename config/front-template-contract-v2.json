@@ -2,6 +2,19 @@
   "appId": "APP_INTERIOR",
   "writerT1Template": "PTPL-PAUL-EXPERT-V1",
   "t2Template": "T2_INTERIOR_ESTIMATE_RENDER_V2",
-  "requiredOutputs": ["measurements","material_specs","unit_rates","bom","labor","schedule","exclusions","evidence","uncertainty"],
-  "runtimeStatus": "BOUND_SYNC_X2_PENDING"
+  "fullPackageContract": "INTERIOR_PLAN_FULL_PACKAGE_V1",
+  "runtimeAdapter": "FACTORY_CYCLE_COMPAT_V1",
+  "packModes": ["INTERIOR_ESTIMATE_PACK", "INTERIOR_FULL_PACKAGE", "SKETCHUP_PACK"],
+  "requiredOutputs": ["measurements", "material_specs", "unit_rates", "bom", "labor", "schedule", "exclusions", "evidence", "uncertainty"],
+  "sketchup": {
+    "canonicalManifestSchema": "SKP_MODEL_MANIFEST_V1",
+    "canonicalSeedSchema": "SKP_SEED_BUNDLE_V1",
+    "requiredTabs": ["SKP_MODEL_MANIFEST", "SKP_SEED_LIBRARY", "SKP_OUTPUT_TEMPLATE", "SKP_RUNTIME_LOG"],
+    "outputTemplates": ["normalized_floorplan", "perspective", "isometric", "video_scene", "estimate", "material_list", "finish_list", "material_board", "schedule", "client_proposal"],
+    "geometryTruthPolicy": "DRIVE_VERIFIED_MANIFEST_ONLY",
+    "d5Policy": "RENDER_SUPPORT_ONLY_UNLESS_GEOMETRY_VERIFIED"
+  },
+  "hardGates": ["dimension_truth", "unit_scale", "opening_fixed_point", "collision_clearance", "source_rights", "estimate_quantity_lineage", "no_llm_price_guess", "drive_readback_x2"],
+  "runtimeStatus": "COMPAT_RUNTIME_COMPLETE_NATIVE_HARDENING_AUTH_HOLD",
+  "productionPolicy": "LAST_GOOD_PRODUCTION_PRESERVED_UNTIL_PREVIEW_X2_AND_NATIVE_AUTH_GATE"
 }
