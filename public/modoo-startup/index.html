@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>모두의창업 중앙관리</title>
+  <style>
+    :root{font-family:Inter,Pretendard,system-ui,sans-serif;background:#f5f6f8;color:#17191d}body{margin:0}.wrap{max-width:980px;margin:auto;padding:28px}.hero{background:white;border-radius:20px;padding:26px;box-shadow:0 8px 30px #0000000d}.kicker{font-size:13px;color:#667085}.title{font-size:30px;font-weight:800;margin:6px 0}.sub{color:#475467;line-height:1.6}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:14px;margin-top:18px}.card{background:white;border-radius:16px;padding:18px;border:1px solid #e7e9ee}.label{font-size:12px;color:#667085}.value{font-size:18px;font-weight:750;margin-top:7px}.status{display:inline-block;padding:6px 10px;border-radius:999px;background:#fff4df;color:#a15c00;font-weight:700;font-size:13px}.steps{margin-top:18px;display:flex;gap:8px;flex-wrap:wrap}.step{padding:8px 10px;border-radius:10px;background:#eef0f4;font-size:13px}.step.on{background:#e7f6ec;color:#146c2e;font-weight:700}.actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:20px}.actions a{padding:11px 14px;border-radius:12px;background:#17191d;color:white;text-decoration:none;font-weight:700}.actions a.alt{background:white;color:#17191d;border:1px solid #d7dae0}footer{font-size:12px;color:#667085;margin-top:18px}</style>
+</head>
+<body>
+<div class="wrap">
+  <section class="hero">
+    <div class="kicker">CENTRAL AGENT · MODU STARTUP</div>
+    <div class="title">AI 건설·인테리어 현장운영 OS</div>
+    <div class="sub">견적·물량·자재·발주·일정·A/S의 반복 행정을 AI로 연결하는 건설·인테리어 운영 플랫폼</div>
+    <div class="actions">
+      <a href="https://www.modoo.or.kr/" target="_blank" rel="noreferrer">모두의창업 포털</a>
+      <a class="alt" href="https://docs.google.com/spreadsheets/d/19zU7VM1u5KZjdx6Y1aUOLEn26MJtBANyLpF1w9iJt8k/edit" target="_blank" rel="noreferrer">중앙관리 시트</a>
+      <a class="alt" href="https://docs.google.com/document/d/13QvmlSeReC6npMcBPKWY22BJa-RaXKzs9cYQN5Tj-1w/edit" target="_blank" rel="noreferrer">신청서 작업본</a>
+    </div>
+  </section>
+  <div class="grid">
+    <div class="card"><div class="label">프로그램</div><div class="value">모두의 창업 프로젝트 2차</div></div>
+    <div class="card"><div class="label">트랙</div><div class="value">일반/기술</div></div>
+    <div class="card"><div class="label">현재 상태</div><div class="value"><span class="status" id="status">AUTH_REQUIRED</span></div></div>
+    <div class="card"><div class="label">완료 판정</div><div class="value">접수결과 readback 후</div></div>
+  </div>
+  <section class="card" style="margin-top:14px">
+    <div class="label">반복 워크플로우</div>
+    <div class="steps">
+      <span class="step on">DISCOVER</span><span class="step on">LEARN</span><span class="step on">PREPARE</span><span class="step">LOGIN</span><span class="step">SUBMIT</span><span class="step">VERIFY</span><span class="step">MONITOR</span><span class="step">NEXT_STAGE</span>
+    </div>
+  </section>
+  <section class="card" style="margin-top:14px">
+    <div class="label">검증 원칙</div>
+    <div class="sub" style="margin-top:8px">제출 버튼 클릭만으로 완료 처리하지 않습니다. 포털 제출완료 화면과 접수 상태, 접수 알림을 교차확인하고 중앙관리 시트에 증빙이 기록된 경우에만 COMPLETE로 전환합니다.</div>
+  </section>
+  <footer>Source of truth: 모두의창업 중앙관리 시트 V2 · 원본 자료와 main 브랜치는 보존</footer>
+</div>
+</body>
+</html>
