@@ -1,0 +1,45 @@
+{
+  "version": "OUTPUT_VALUE_REVIEW_V1_20260826",
+  "purpose": "A result is not complete because it ran successfully. It must be useful, aligned with user intent, materially better than the previous baseline, and feed concrete learning back into the workflow.",
+  "requiredReviewStages": [
+    "TECHNICAL_VALIDATION",
+    "USER_VALUE_REVIEW",
+    "DESIRED_OUTCOME_ALIGNMENT",
+    "BASELINE_COMPARISON",
+    "GAP_AND_ROOT_CAUSE",
+    "IMPROVEMENT_ACTION",
+    "RETEST_SAME_CONDITION",
+    "LEARNING_WRITEBACK"
+  ],
+  "dimensions": [
+    {"id":"CORRECTNESS","weight":20,"question":"Are quantities, prices, formulas, links and classifications supported by evidence and internally consistent?"},
+    {"id":"COMPLETENESS","weight":15,"question":"Does the result contain all information needed for the requested task, including hidden-but-required BOM, labor, expenses and assumptions?"},
+    {"id":"PRACTICAL_USEFULNESS","weight":20,"question":"Can the intended user make a real decision or perform the next action directly from this result?"},
+    {"id":"USER_INTENT_MATCH","weight":15,"question":"Does the output match the requested estimate style, role, tier, project domain and purpose rather than merely returning generic data?"},
+    {"id":"TRACEABILITY","weight":10,"question":"Can each important number/item be traced to plan takeoff, source, price date, product/labor record or user override?"},
+    {"id":"UX_CLARITY","weight":10,"question":"Is the output organized so a consumer or supplier can understand and use it without unnecessary interpretation?"},
+    {"id":"EVOLUTION_GAIN","weight":10,"question":"Is this measurably better than the LAST_GOOD/baseline version, and are regressions identified?"}
+  ],
+  "promotion": {
+    "minimumScore": 80,
+    "criticalDimensionsMinimum": {"CORRECTNESS":16,"PRACTICAL_USEFULNESS":16,"USER_INTENT_MATCH":12},
+    "requiresBaselineComparison": true,
+    "requiresNoUnresolvedCriticalRegression": true,
+    "requiresSameConditionRetest": true,
+    "requiresLearningWriteback": true
+  },
+  "reviewRecord": [
+    "INPUT_CASE",
+    "EXPECTED_USER_OUTCOME",
+    "ACTUAL_OUTPUT",
+    "WHAT_HELPED",
+    "WHAT_DID_NOT_HELP",
+    "MISSING_INFORMATION",
+    "REGRESSION_VS_BASELINE",
+    "SCORE_BY_DIMENSION",
+    "ROOT_CAUSE",
+    "IMPROVEMENT_ACTION",
+    "RETEST_RESULT",
+    "LESSON_CHECKED"
+  ]
+}

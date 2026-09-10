@@ -1,0 +1,76 @@
+{
+  "version": "INTERIOR_HIGH_BAR_BENCHMARK_V1_20260826",
+  "purpose": "Only high-confidence evidence may be used to judge whether an estimate output is genuinely useful and improved.",
+  "sourceTiers": {
+    "A": [
+      "official government standards and notices",
+      "official construction wage surveys",
+      "official procurement cost/overhead standards",
+      "project-specific signed/final estimate, contract, invoice or verified actual execution data"
+    ],
+    "B": [
+      "manufacturer official price/spec data",
+      "authorized distributor or major retailer live product data",
+      "multiple independently verified contractor quotations with project/date context"
+    ],
+    "C": [
+      "historical internal estimates with known project identity/version/date",
+      "trade association guidance not directly applicable to the exact project"
+    ],
+    "D_REFERENCE_ONLY": [
+      "blogs, community posts, unsourced price tables, old screenshots, AI-generated estimates, single anecdotal quote"
+    ]
+  },
+  "benchmarkGate": {
+    "minimumIndependentSourcesPerCriticalPrice": 2,
+    "requireAtLeastOneTierAForLaborOrPublicCostBasis": true,
+    "requireEffectiveDateMatch": true,
+    "requireRegionOrProjectScopeMatch": true,
+    "requireUnitNormalization": true,
+    "requireVATAndIndirectCostNormalization": true,
+    "requirePlanTakeoffCrosscheck": true,
+    "requireActualProjectDeltaWhenAvailable": true,
+    "blockIfSourceIdentityUnknown": true,
+    "blockIfVersionOrDateUnknown": true
+  },
+  "comparisonDesign": {
+    "mandatoryCases": [
+      "residential_standard",
+      "commercial_standard",
+      "architecture_or_major_renovation"
+    ],
+    "compare": [
+      "LAST_GOOD",
+      "CURRENT_CANDIDATE",
+      "HIGH_CONFIDENCE_BENCHMARK"
+    ],
+    "metrics": [
+      "BOM_COVERAGE",
+      "TAKEOFF_ACCURACY",
+      "MATERIAL_PRICE_ERROR",
+      "LABOR_PRICE_ERROR",
+      "INDIRECT_EXPENSE_ERROR",
+      "SOURCE_TRACEABILITY",
+      "PRODUCT_LINK_VALIDITY",
+      "USER_ACTIONABILITY",
+      "DOMAIN_APPROPRIATENESS",
+      "REGRESSION_COUNT"
+    ]
+  },
+  "passRules": {
+    "criticalPriceUnsupportedCount": 0,
+    "criticalBomMissingCount": 0,
+    "fatalRegressionCount": 0,
+    "valueReviewScoreMin": 85,
+    "correctnessMin": 90,
+    "practicalUsefulnessMin": 85,
+    "userIntentMatchMin": 90,
+    "sameConditionRetestCount": 2,
+    "lessonCheckedRequired": true
+  },
+  "currentOfficialAnchors": [
+    "MOLIT 2026 standard productivity/market unit cost",
+    "Construction Association of Korea 2026 wage survey",
+    "Public Procurement Service 2026 facility construction indirect cost rates"
+  ]
+}

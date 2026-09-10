@@ -1,0 +1,52 @@
+name: Interior Unified QA
+
+on:
+  push:
+    branches:
+      - feat/estimate-marketplace-personalization-20260825
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test-build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Unified regression gate
+        run: npm run test:unified
+
+      - name: Production build
+        run: npm run build
+
+      - name: Front and endpoint contract guard
+        shell: bash
+        run: |
+          set -euo pipefail
+          if grep -R "bots-git-feat-persona-language" FrontLanguageBotBridge.tsx; then
+            echo "Hardcoded preview bot endpoint is forbidden"
+            exit 1
+          fi
+          if grep -q "AKfycbyuYK2lx8FY0asRtaUaGXt8ha6ayokrTdr3afDozPErnEV4E5APpJcfm3mNujpKkR65Gg" .env.example; then
+            echo "Stale Interior WebApp endpoint must not be restored"
+            exit 1
+          fi
+          grep -q "VITE_BOTS_FRONT_URL" FrontLanguageBotBridge.tsx
+          grep -q "InteriorEntryShell" index.tsx
+          grep -q "Interior landing" components/InteriorEntryShell.tsx
+          grep -q '^INTERIOR_BACKDATA_ENDPOINT=$' .env.example

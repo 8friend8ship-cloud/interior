@@ -5,18 +5,38 @@ import { UserInputForm } from './components/UserInputForm';
 import { ResultsDisplay } from './components/ResultsDisplay';
 import { LoadingSpinner } from './components/LoadingSpinner';
 import { AdSenseLoadingOverlay } from './components/AdSenseLoadingOverlay';
-import { AdminPanel } from './components/AdminPanel';
 import { DesignStudio } from './components/DesignStudio';
-import {
-    generateVisualizations,
-    generateMasterTemplate,
-    generateMaterialDetails,
-    generateProjectPackage,
-    createVirtualPlanFromDimensions
-} from './services/geminiService';
+import { EstimateMarketplaceMode } from './components/EstimateMarketplaceMode';
+import { EstimateRequestForm } from './components/EstimateRequestForm';
+import { EstimateTemplateSummary } from './components/EstimateTemplateSummary';
+import { ConnectedEstimateDetails } from './components/ConnectedEstimateDetails';
+import { SiteContextInput } from './components/SiteContextInput';
+import { createVirtualPlanFromDimensions } from './services/virtualPlan';
 import { generateDeterministicProjectPlan } from './services/deterministicEstimate';
+import { loadMarketplaceContext, saveMarketplaceContext } from './services/estimateMarketplace';
+import {
+    fetchInteriorEstimateBundle,
+    fetchInteriorMaterials,
+    fetchInteriorRender,
+    fetchInteriorSchedule,
+    mergeBridgeEstimate,
+    extractBridgeMaterials,
+    extractBridgeRender,
+    InteriorBridgeResult,
+} from './services/interiorBackdataBridge';
 import { addHistoricalDetailed } from './utils/adminStorage';
 import { AppState, ProjectDetails, GeneratedPlan } from './types';
+import { EstimateMarketplaceContext } from './contracts/estimateMarketplace';
+import type { EstimateRequestDraft } from './contracts/estimateRequest';
+import type { InteriorSiteContext } from './contracts/siteContext';
+
+const emptyEstimateRequest = (): EstimateRequestDraft => ({
+  formSchemaId: '',
+  version: 'ESTIMATE_REQUEST_V1_20260827',
+  answers: {},
+  attachmentKinds: [],
+  completedRequiredFields: false,
+});
 
 const App: React.FC = () => {
   const [appState, setAppState] = useState<AppState>(AppState.INPUT);
@@ -27,50 +47,56 @@ const App: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [isModifying, setIsModifying] = useState<boolean>(false);
   const [loadingSection, setLoadingSection] = useState<'materials' | 'package' | 'report' | 'schedule' | null>(null);
-  const [showAdmin, setShowAdmin] = useState(false);
+  const [bridgeStatus, setBridgeStatus] = useState<InteriorBridgeResult | null>(null);
+  const [marketplaceContext, setMarketplaceContext] = useState<EstimateMarketplaceContext>(() => loadMarketplaceContext());
+  const [estimateRequest, setEstimateRequest] = useState<EstimateRequestDraft>(() => emptyEstimateRequest());
+  const [siteContext, setSiteContext] = useState<InteriorSiteContext | null>(null);
+
+  const handleMarketplaceChange = useCallback((context: EstimateMarketplaceContext) => {
+    setMarketplaceContext(context);
+    saveMarketplaceContext(context);
+    setEstimateRequest(prev => ({ ...prev, formSchemaId: '', completedRequiredFields: false }));
+  }, []);
 
   const processProject = async (details: ProjectDetails) => {
       setProjectDetails(details);
       setError(null);
       setGeneratedPlan(null);
+      setBridgeStatus(null);
+      saveMarketplaceContext(marketplaceContext);
       const skip3D = !details.wants3DGeneration;
 
       try {
         setAppState(AppState.ANALYZING_PLAN);
-        let virtualPlan;
 
-        if (details.projectScope === 'bathroom' &&
-            details.bathroomSpecifics?.useDimensionsOnly &&
-            details.bathroomSpecifics.width &&
-            details.bathroomSpecifics.depth) {
-            virtualPlan = createVirtualPlanFromDimensions(
-                details.bathroomSpecifics.width,
-                details.bathroomSpecifics.depth,
-                'BATHROOM'
-            );
-        } else {
-            const areaM2 = Math.max(1, Number(details.area || 1)) * 3.3058;
-            const side = Math.sqrt(areaM2);
-            const roomType = details.projectScope === 'bathroom' ? 'BATHROOM' : 'LIVING_ROOM';
-            virtualPlan = createVirtualPlanFromDimensions(side, side, roomType);
-        }
+        const virtualPlan = (
+          details.projectScope === 'bathroom' &&
+          details.bathroomSpecifics?.useDimensionsOnly &&
+          details.bathroomSpecifics.width &&
+          details.bathroomSpecifics.depth
+        ) ? createVirtualPlanFromDimensions(
+              details.bathroomSpecifics.width,
+              details.bathroomSpecifics.depth,
+              'BATHROOM'
+            ) : undefined;
 
-        const detailsWithPlan = { ...details, virtualPlan };
+        const detailsWithPlan = virtualPlan ? { ...details, virtualPlan } : details;
         setProjectDetails(detailsWithPlan);
 
         if (skip3D) {
             await handleFinalizeLogic(detailsWithPlan);
         } else {
             setAppState(AppState.GENERATING_VIEWS);
-            const { isometricView, perspectiveView } = await generateVisualizations(
-                virtualPlan,
-                details.image,
-                details.modelType,
-                true,
-                details.projectScope
-            );
-            setIsometricView(isometricView);
-            setPerspectiveView(perspectiveView);
+            const bridgeRender = await fetchInteriorRender(detailsWithPlan, marketplaceContext);
+            const connectedRender = extractBridgeRender(bridgeRender);
+            setBridgeStatus(bridgeRender);
+
+            if (!bridgeRender.ok || !connectedRender.isometricView || !connectedRender.perspectiveView) {
+              throw new Error('검증된 Interior Render 결과가 없습니다. 브라우저 AI/Mock 이미지로 대체하지 않습니다.');
+            }
+
+            setIsometricView(connectedRender.isometricView);
+            setPerspectiveView(connectedRender.perspectiveView);
             setAppState(AppState.DESIGN_STUDIO);
         }
       } catch (err) {
@@ -84,11 +110,14 @@ const App: React.FC = () => {
   const handleFinalizeLogic = async (details: ProjectDetails) => {
       setAppState(AppState.FINALIZING);
       try {
-        const basicPlan = generateDeterministicProjectPlan(details);
+        const deterministicPlan = generateDeterministicProjectPlan(details);
+        const bridgeEstimate = await fetchInteriorEstimateBundle(details, marketplaceContext);
+        const finalPlan = mergeBridgeEstimate(deterministicPlan, bridgeEstimate, Number(details.area || 0));
+        setBridgeStatus(bridgeEstimate);
 
         if (details.projectScope === 'bathroom' || details.projectScope === 'sash') {
-            const totalPrice = basicPlan.costEstimate.reduce((sum, item) => sum + (item.totalPrice || 0), 0);
-            const summary = basicPlan.designConcept.description.substring(0, 100) + '...';
+            const totalPrice = finalPlan.costEstimate.reduce((sum, item) => sum + (item.totalPrice || 0), 0);
+            const summary = finalPlan.designConcept.description.substring(0, 100) + '...';
             addHistoricalDetailed({
                 id: `hist_${Date.now()}`,
                 type: details.projectScope,
@@ -100,7 +129,7 @@ const App: React.FC = () => {
             });
         }
 
-        setGeneratedPlan(basicPlan);
+        setGeneratedPlan(finalPlan);
         setAppState(AppState.RESULTS);
       } catch (err) {
         const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred.';
@@ -110,8 +139,18 @@ const App: React.FC = () => {
   };
 
   const handleInitialSubmit = useCallback(async (details: ProjectDetails) => {
-    await processProject(details);
-  }, []);
+    saveMarketplaceContext(marketplaceContext);
+    if (!estimateRequest.completedRequiredFields) {
+      setError('견적 의뢰서의 필수 항목을 먼저 확인해 주세요. 비교견적·입찰 모드에서는 추가 질문과 필수 자료가 적용됩니다.');
+      return;
+    }
+    const detailsWithContext = {
+      ...details,
+      ...(siteContext ? { siteContext } : {}),
+      estimateRequest,
+    };
+    await processProject(detailsWithContext);
+  }, [marketplaceContext, siteContext, estimateRequest]);
 
   const handleStyleModification = useCallback(async (viewToModify: 'iso' | 'pers') => {
     const baseImage = viewToModify === 'iso' ? isometricView : perspectiveView;
@@ -135,52 +174,59 @@ const App: React.FC = () => {
     };
     setProjectDetails(finalDetails);
     await handleFinalizeLogic(finalDetails);
-  }, [projectDetails, isometricView, perspectiveView]);
+  }, [projectDetails, isometricView, perspectiveView, marketplaceContext]);
 
   const handleLoadMaterials = async () => {
       if (!projectDetails || !generatedPlan) return;
       setLoadingSection('materials');
       try {
-          const { sheet, prompts } = await generateMaterialDetails({ ...projectDetails, isDemo: true });
-          setGeneratedPlan(prev => prev ? { ...prev, materialDetailSheet: sheet, materialBoardPrompts: prompts } : null);
+          const bridgeMaterials = await fetchInteriorMaterials(projectDetails, marketplaceContext);
+          const connectedMaterials = extractBridgeMaterials(bridgeMaterials);
+          setBridgeStatus(bridgeMaterials);
+          if (connectedMaterials.length > 0) {
+            setGeneratedPlan(prev => prev ? { ...prev, materialDetailSheet: connectedMaterials } : null);
+          } else {
+            setError('검증된 공용 자재 백데이터가 부족합니다. 임의 AI 자재를 생성하지 않고 Queens 보충 대상으로 유지합니다.');
+          }
       } catch (e) {
-          console.warn('Stored material detail fallback unavailable', e);
+          setError('자재 백데이터 브릿지 연결을 확인할 수 없습니다. 검증되지 않은 자재 목록은 생성하지 않습니다.');
+          console.warn('Material bridge unavailable', e);
       } finally {
           setLoadingSection(null);
       }
   };
 
   const handleLoadSchedule = async () => {
-      if (!generatedPlan) return;
+      if (!projectDetails || !generatedPlan) return;
       setLoadingSection('schedule');
-      setGeneratedPlan(prev => prev ? { ...prev, projectSchedule: prev.projectSchedule || [] } : null);
-      setLoadingSection(null);
+      try {
+          const bridgeSchedule = await fetchInteriorSchedule(projectDetails, marketplaceContext);
+          setBridgeStatus(bridgeSchedule);
+          const value = bridgeSchedule.data?.data ?? bridgeSchedule.data ?? {};
+          const schedule = value.projectSchedule || value.schedule || value.items || value.result || [];
+          if (bridgeSchedule.ok && Array.isArray(schedule) && schedule.length > 0) {
+              setGeneratedPlan(prev => prev ? { ...prev, projectSchedule: schedule } : null);
+          } else {
+              setError('검증된 공정표가 아직 없습니다. 범위·수량·현장조건이 확인된 후 공정표를 생성합니다.');
+          }
+      } catch (e) {
+          setError('공정표 브릿지 연결을 확인할 수 없습니다. 임의 공정표를 만들지 않습니다.');
+          console.warn('Schedule bridge unavailable', e);
+      } finally {
+          setLoadingSection(null);
+      }
   };
 
   const handleLoadPackage = async () => {
-      if (!projectDetails || !generatedPlan) return;
       setLoadingSection('package');
-      try {
-           const projectPackage = await generateProjectPackage({ ...projectDetails, isDemo: true });
-           setGeneratedPlan(prev => prev ? { ...prev, projectPackage } : null);
-      } catch (e) {
-          console.warn('Stored project package fallback unavailable', e);
-      } finally {
-          setLoadingSection(null);
-      }
+      setError('입찰/프로젝트 패키지는 검증된 T2 결과 기반 전용 adapter 연결 후 제공됩니다. 브라우저 생성형 AI로 우회하지 않습니다.');
+      setLoadingSection(null);
   };
 
   const handleLoadMasterTemplate = async () => {
-      if (!projectDetails || !generatedPlan) return;
       setLoadingSection('report');
-      try {
-          const masterTemplate = await generateMasterTemplate({ ...projectDetails, isDemo: true }, generatedPlan);
-          setGeneratedPlan(prev => prev ? { ...prev, masterTemplate } : null);
-      } catch (e) {
-          console.warn('Stored report fallback unavailable', e);
-      } finally {
-          setLoadingSection(null);
-      }
+      setError('보고서는 검증된 Interior 결과를 NotebookLM/Report adapter로 넘기는 선택 출력입니다. 견적 Core와 분리하여 연결합니다.');
+      setLoadingSection(null);
   };
 
   const handleReset = useCallback(() => {
@@ -189,6 +235,9 @@ const App: React.FC = () => {
     setGeneratedPlan(null);
     setIsometricView(null);
     setPerspectiveView(null);
+    setBridgeStatus(null);
+    setEstimateRequest(emptyEstimateRequest());
+    setSiteContext(null);
     setError(null);
     setLoadingSection(null);
   }, []);
@@ -198,19 +247,26 @@ const App: React.FC = () => {
 
     switch (appState) {
       case AppState.INPUT:
-        return <UserInputForm onSubmit={handleInitialSubmit} error={error} />;
+        return (
+          <>
+            <EstimateMarketplaceMode value={marketplaceContext} onChange={handleMarketplaceChange} />
+            <EstimateRequestForm context={marketplaceContext} value={estimateRequest} onChange={setEstimateRequest} />
+            <SiteContextInput value={siteContext} onChange={setSiteContext} />
+            <UserInputForm onSubmit={handleInitialSubmit} error={error} />
+          </>
+        );
       case AppState.ANALYZING_PLAN:
         return (
           <AdSenseLoadingOverlay
-            message={isBathroomMode ? '욕실 치수·물량 준비 중...' : '면적·선택 공종 기준 물량 준비 중...'}
-            subMessage="저장된 견적 템플릿과 입력값으로 API 없이 계산합니다."
+            message={isBathroomMode ? '욕실 치수·물량 준비 중...' : '도면·면적·공종 근거 확인 중...'}
+            subMessage={`${marketplaceContext.projectDomain || 'RESIDENTIAL_INTERIOR'} 전용 백데이터와 공종 coverage를 우선 확인합니다. 검증되지 않은 평면·수량·단가는 만들지 않습니다.`}
           />
         );
       case AppState.GENERATING_VIEWS:
         return (
           <AdSenseLoadingOverlay
-            message="로컬 3D 프리뷰 준비 중..."
-            subMessage="MVP에서는 외부 생성형 API를 호출하지 않고 안전한 프리뷰를 사용합니다."
+            message="아이소·투시도 준비 중..."
+            subMessage="검증된 Interior Render bridge 결과만 사용합니다. 브라우저 AI/Mock 이미지는 사용하지 않습니다."
           />
         );
       case AppState.DESIGN_STUDIO:
@@ -232,41 +288,46 @@ const App: React.FC = () => {
       case AppState.FINALIZING:
         return (
            <AdSenseLoadingOverlay
-            message="최종 실행견적 산출 중..."
-            subMessage="PTPL-PAUL-EXPERT-V1 → T2_INTERIOR_ESTIMATE_RENDER_V2 기준으로 물량·BOM·인건비를 결정형 계산합니다."
+            message="최종 상세견적 산출 중..."
+            subMessage="선택 도메인의 Queens/Seed/T1/T2와 검증된 BOM·단가·공정 근거만 병합합니다."
           />
         );
       case AppState.RESULTS:
         return generatedPlan && projectDetails && (
-          <ResultsDisplay
-            plan={generatedPlan}
-            details={projectDetails}
-            onReset={handleReset}
-            onLoadMasterTemplate={handleLoadMasterTemplate}
-            onLoadMaterials={handleLoadMaterials}
-            onLoadSchedule={handleLoadSchedule}
-            onLoadPackage={handleLoadPackage}
-            loadingSection={loadingSection}
-          />
+          <>
+            <EstimateTemplateSummary context={marketplaceContext} />
+            <ConnectedEstimateDetails plan={generatedPlan} bridgeStatus={bridgeStatus} />
+            <ResultsDisplay
+              plan={generatedPlan}
+              details={projectDetails}
+              onReset={handleReset}
+              onLoadMasterTemplate={handleLoadMasterTemplate}
+              onLoadMaterials={handleLoadMaterials}
+              onLoadSchedule={handleLoadSchedule}
+              onLoadPackage={handleLoadPackage}
+              loadingSection={loadingSection}
+            />
+          </>
         );
       default:
-        return <UserInputForm onSubmit={handleInitialSubmit} error={error} />;
+        return (
+          <>
+            <EstimateMarketplaceMode value={marketplaceContext} onChange={handleMarketplaceChange} />
+            <EstimateRequestForm context={marketplaceContext} value={estimateRequest} onChange={setEstimateRequest} />
+            <SiteContextInput value={siteContext} onChange={setSiteContext} />
+            <UserInputForm onSubmit={handleInitialSubmit} error={error} />
+          </>
+        );
     }
   };
 
   return (
     <div className="min-h-screen flex flex-col font-sans text-gray-800">
-      <Header onOpenAdmin={() => setShowAdmin(true)} />
+      <Header onOpenAdmin={() => setError('관리자 AI 분석은 중앙 audited Core 전환 완료 후 다시 활성화합니다. 현재 브라우저 AI 직접호출은 차단했습니다.')} />
       <main className="flex-grow container mx-auto px-4 py-8 relative">
         {renderContent()}
       </main>
       <Footer />
-      {showAdmin && (
-        <AdminPanel
-            onClose={() => setShowAdmin(false)}
-            initialAddress={projectDetails?.address}
-        />
-      )}
     </div>
   );
 };

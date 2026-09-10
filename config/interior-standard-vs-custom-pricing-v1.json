@@ -1,0 +1,65 @@
+{
+  "version": "INTERIOR_STANDARD_CUSTOM_PRICING_V1_20260825",
+  "freeConsumer": {
+    "quoteMode": "STANDARD",
+    "priceSource": "PUBLIC_VERIFIED_BACKDATA",
+    "customProfile": false,
+    "requiredData": [
+      "FULL_BOM",
+      "MATERIAL_MASTER",
+      "LABOR_MASTER",
+      "EXPENSE_MASTER",
+      "PRICE_AS_OF",
+      "PRICE_SOURCE",
+      "PRODUCT_URL",
+      "QA_STATUS"
+    ],
+    "rule": "General consumers receive a complete standard estimate from the system's verified shared backdata. No Johnson/local custom override is required."
+  },
+  "proCustom": {
+    "quoteMode": "CUSTOM",
+    "pricePrecedence": [
+      "USER_JOHNSON_LOCAL",
+      "PUBLIC_VERIFIED_BACKDATA_SUGGESTION",
+      "MISSING_REQUIRES_REVIEW"
+    ],
+    "rule": "Build the same complete standard BOM first, then apply the user's Johnson material/labor/expense/margin/style overrides. Missing Johnson entries are filled from public verified backdata and can be accepted into the local Johnson profile."
+  },
+  "sharedBackdataCoverage": {
+    "materials": [
+      "PRIMARY_MATERIAL",
+      "SUB_MATERIAL",
+      "ADHESIVE",
+      "MORTAR_GROUT",
+      "FASTENER_HARDWARE",
+      "SEALANT_WATERPROOF",
+      "PROTECTION",
+      "CONSUMABLE",
+      "TOOL_CONSUMABLE"
+    ],
+    "labor": [
+      "TRADE_LABOR",
+      "SPECIALIST_INSTALL",
+      "CREW_PRODUCTIVITY",
+      "MINIMUM_CALL_OUT",
+      "OVERTIME_OR_SPECIAL_CONDITION"
+    ],
+    "expenses": [
+      "LOGISTICS",
+      "LIFTING",
+      "WASTE_DISPOSAL",
+      "PARKING_ACCESS",
+      "SITE_PROTECTION",
+      "CLEANING",
+      "EQUIPMENT_RENTAL",
+      "PERMIT_OR_MANAGEMENT_FEE",
+      "MISC_PROJECT_EXPENSE"
+    ]
+  },
+  "safety": {
+    "manualSamplePriceAsDefault": false,
+    "mockAreaScalingAsEstimate": false,
+    "historicalPriceWithoutDateAsCurrent": false,
+    "clientExposeInternalCostMargin": false
+  }
+}

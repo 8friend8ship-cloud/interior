@@ -1,0 +1,24 @@
+{
+  "fixtureId": "INTERIOR_SITE_PARKING_ENTRY_2CARS_20260827",
+  "lotBoundaryVerified": true,
+  "buildingPlacementVerified": true,
+  "roadRelationVerified": true,
+  "roadElevationVerified": true,
+  "vehicleAccessVerified": true,
+  "parkingSpaces": 2,
+  "separateDriveway": false,
+  "pedestrianRoute": "PARKING_TO_ENTRANCE",
+  "entranceVerified": true,
+  "assets": [
+    { "id": "plan-01", "kind": "PLAN", "fileName": "site-plan-reference", "verified": true },
+    { "id": "site-01", "kind": "SITE_PHOTO", "fileName": "building-and-lot-reference", "verified": true },
+    { "id": "road-01", "kind": "ROAD_PHOTO", "fileName": "road-entry-reference", "verified": true },
+    { "id": "parking-01", "kind": "PARKING_PHOTO", "fileName": "two-car-parking-reference", "verified": true }
+  ],
+  "notes": [
+    "Two parking spaces.",
+    "No separate driveway.",
+    "Pedestrian approach runs from parking to entrance.",
+    "Lot/building/road/elevation relationships must remain evidence-based."
+  ]
+}
