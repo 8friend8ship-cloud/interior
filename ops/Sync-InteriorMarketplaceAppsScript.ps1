@@ -2,7 +2,9 @@ $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
 
 $ScriptId = '1nj9yVonD6rVBdpPMqI2Qzsi7LYGruZMi8XYt6_07xHMI9HH4NEMXHIZQ'
-$SourceFile = Join-Path (Split-Path $PSScriptRoot -Parent) 'apps-script\InteriorMarketplaceRuntime_20260825.gs'
+$SourceRoot = Join-Path (Split-Path $PSScriptRoot -Parent) 'apps-script'
+$RuntimeSource = Join-Path $SourceRoot 'InteriorMarketplaceRuntime_20260825.gs'
+$AdapterSource = Join-Path $SourceRoot 'BackdataFactoryAdapter_20260823.gs'
 $Stamp = Get-Date -Format 'yyyyMMdd_HHmmss'
 $WorkRoot = Join-Path $env:TEMP "INTERIOR_APPS_SCRIPT_SYNC_$Stamp"
 $BackupZip = Join-Path $env:USERPROFILE "Downloads\INTERIOR_APPS_SCRIPT_BACKUP_$Stamp.zip"
@@ -22,7 +24,8 @@ function Invoke-Clasp([string[]]$Args, [switch]$AllowFail) {
   return $code
 }
 
-if (!(Test-Path $SourceFile)) { throw "Missing source file: $SourceFile" }
+if (!(Test-Path $RuntimeSource)) { throw "Missing source file: $RuntimeSource" }
+if (!(Test-Path $AdapterSource)) { throw "Missing source file: $AdapterSource" }
 if (!(Get-Command node -ErrorAction SilentlyContinue)) { throw 'Node.js is required.' }
 if (!(Get-Command npx -ErrorAction SilentlyContinue)) { throw 'npx is required.' }
 
@@ -40,8 +43,9 @@ try {
   Compress-Archive -Path (Join-Path $WorkRoot '*') -DestinationPath $BackupZip -Force
   Write-Log "Remote backup saved: $BackupZip"
 
-  Copy-Item -Path $SourceFile -Destination (Join-Path $WorkRoot 'InteriorMarketplaceRuntime_20260825.gs') -Force
-  Write-Log 'Overlay complete: InteriorMarketplaceRuntime_20260825.gs'
+  Copy-Item -Path $RuntimeSource -Destination (Join-Path $WorkRoot 'InteriorMarketplaceRuntime_20260825.gs') -Force
+  Copy-Item -Path $AdapterSource -Destination (Join-Path $WorkRoot 'BackdataFactoryAdapter_20260823.gs') -Force
+  Write-Log 'Overlay complete: InteriorMarketplaceRuntime_20260825.gs + BackdataFactoryAdapter_20260823.gs'
 
   Invoke-Clasp @('push','--force')
   Write-Log 'SOURCE_PUSH_PASS'
@@ -49,7 +53,7 @@ try {
   $inspect1 = Invoke-Clasp @('run','inspectInteriorMarketplaceTriggers') -AllowFail
   if ($inspect1 -ne 0) {
     Write-Log 'CLASP_RUN_BLOCKED: Apps Script Execution API/executable permission may need one-time authorization. Source push is complete; trigger install was not claimed.'
-    Write-Log 'NEXT_REQUIRED_FUNCTION: installInteriorMarketplaceTriggers'
+    Write-Log 'RUNTIME_RULE: existing processTaskQueue 5m trigger is canonical; Template runs on each bridge cycle and Backdata is gated by INTERIOR_FACTORY_BUCKET (10m).'
     exit 2
   }
 
@@ -67,7 +71,7 @@ try {
   }
 
   Write-Log 'TRIGGER_INSTALL_AND_READBACK_PASS'
-  Write-Log 'Expected handlers: runInteriorEstimateTemplateTick (5m), runInteriorBackdataFactoryControl10m (10m)'
+  Write-Log 'Expected physical handler: processTaskQueue (5m) only. Logical bridge: runInteriorEstimateTemplateTick each eligible cycle; runInteriorBackdataFactoryControl10m guarded by 10m bucket.'
   Write-Log 'SAFE SYNC COMPLETE'
 }
 finally {
