@@ -1,7 +1,6 @@
 var INTERIOR_MARKETPLACE_RUNTIME_VERSION_ = 'INTERIOR_MARKETPLACE_RUNTIME_V2_20260827';
 var INTERIOR_MARKETPLACE_TRIGGER_SPEC_ = [
-  {handler:'runInteriorBackdataFactoryControl10m', minutes:10},
-  {handler:'runInteriorEstimateTemplateTick', minutes:5}
+  {handler:'processTaskQueue', minutes:5}
 ];
 
 var INTERIOR_EXISTING_TRIGGER_BRIDGE_ = (function(){
@@ -11,7 +10,11 @@ var INTERIOR_EXISTING_TRIGGER_BRIDGE_ = (function(){
     var lastMs = Number(props.getProperty('INTERIOR_EXISTING_TRIGGER_BRIDGE_LAST_MS') || 0);
     if(lastMs && nowMs - lastMs < 240000) return {ok:true,skipped:'INTERVAL_GUARD'};
     props.setProperty('INTERIOR_EXISTING_TRIGGER_BRIDGE_LAST_MS', String(nowMs));
-    var result = runInteriorEstimateTemplateTick();
+    var templateResult = runInteriorEstimateTemplateTick();
+    var backdataResult = typeof globalThis.runInteriorBackdataFactoryControl10m === 'function'
+      ? runInteriorBackdataFactoryControl10m()
+      : {ok:false,error:'BACKDATA_HANDLER_MISSING'};
+    var result = {ok:templateResult.ok !== false && backdataResult.ok !== false,template:templateResult,backdata:backdataResult,at:new Date().toISOString()};
     props.setProperty('INTERIOR_EXISTING_TRIGGER_BRIDGE_LAST_RESULT', JSON.stringify(result).slice(0,9000));
     return result;
   }catch(e){
