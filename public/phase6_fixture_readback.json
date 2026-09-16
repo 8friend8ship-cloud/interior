@@ -1,0 +1,13 @@
+{
+  "ok": true,
+  "fixtureId": "PILOT-INTERIOR-ESTIMATE-CORE",
+  "source": "COMM-001~005_TEST_ONLY",
+  "material": 45404500,
+  "labor": 43210500,
+  "expense": 8510000,
+  "total": 97125000,
+  "marginRate": 0,
+  "quoteTotal": 97125000,
+  "lineage": "PHASE5_DRIVE_FIXTURE→NONPROD_FRONT_READBACK",
+  "completeRule": "NONPROD_X2_AND_CUSTOMER_BON_READBACK_REQUIRED"
+}
