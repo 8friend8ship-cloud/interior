@@ -27,6 +27,28 @@ const getAI = () => {
     return new GoogleGenAI({ apiKey });
 };
 
+const rebaseSchedule = (schedule: SchedulePhase[], targetDate?: string): SchedulePhase[] => {
+    const parsedStart = targetDate && /^\d{4}-\d{2}-\d{2}$/.test(targetDate)
+        ? new Date(`${targetDate}T00:00:00Z`)
+        : new Date();
+    let cursor = Number.isNaN(parsedStart.getTime()) ? new Date() : parsedStart;
+
+    return schedule.map((phase) => {
+        const days = Math.max(1, Number.parseInt(phase.duration, 10) || 1);
+        const start = new Date(cursor);
+        const end = new Date(start);
+        end.setUTCDate(end.getUTCDate() + days - 1);
+        cursor = new Date(end);
+        cursor.setUTCDate(cursor.getUTCDate() + 1);
+
+        return {
+            ...phase,
+            startDate: start.toISOString().slice(0, 10),
+            endDate: end.toISOString().slice(0, 10)
+        };
+    });
+};
+
 const cleanAndParseJSON = (text: string | undefined): any => {
     if (!text) return {};
     try {
@@ -247,7 +269,11 @@ export const generateProjectPlan = async (
     isRefinement: boolean = false
 ): Promise<GeneratedPlan> => {
      if (details.isDemo) {
-         return details.projectScope === 'bathroom' ? MOCK_BATHROOM_PLAN : MOCK_GENERATED_PLAN;
+         const basePlan = details.projectScope === 'bathroom' ? MOCK_BATHROOM_PLAN : MOCK_GENERATED_PLAN;
+         return {
+             ...basePlan,
+             projectSchedule: rebaseSchedule(basePlan.projectSchedule, details.targetDate)
+         };
      }
 
     const flags = details.scopeFlags;
@@ -661,7 +687,10 @@ export const generateMaterialDetails = async (details: ProjectDetails): Promise<
 
 export const generateProjectSchedule = async (details: ProjectDetails): Promise<SchedulePhase[]> => {
     if (details.isDemo) {
-        return details.projectScope === 'bathroom' ? MOCK_BATHROOM_PLAN.projectSchedule : MOCK_GENERATED_PLAN.projectSchedule;
+        const schedule = details.projectScope === 'bathroom'
+            ? MOCK_BATHROOM_PLAN.projectSchedule
+            : MOCK_GENERATED_PLAN.projectSchedule;
+        return rebaseSchedule(schedule, details.targetDate);
     }
 
     const schema: Schema = {
