@@ -171,3 +171,16 @@ test('quantity lineage runtime rejects target-py overwrite collapse', () => {
   assert.equal(result.ok, false);
   assert.equal(result.reason, 'SUSPICIOUS_TARGET_PY_OVERWRITE');
 });
+
+test('Aside consumer UX keeps verified estimate first and blocks silent mock plan', () => {
+  const form = readFileSync('components/UserInputForm.tsx', 'utf8');
+  const studio = readFileSync('components/DesignStudio.tsx', 'utf8');
+  assert.match(form, /const \[wants3D, setWants3D\] = useState\(false\)/);
+  assert.match(form, /valid = Number\.isFinite\(Number\(area\)\) && Number\(area\) > 0 && !!targetDate && !!image && isScopeConfirmed/);
+  assert.doesNotMatch(form, /imageData\s*=\s*MOCK_IMAGE_BASE64/);
+  assert.match(form, /imageData = ''/);
+  assert.match(form, /Math\.round\(\(areaValue \/ 3\.3058\) \* 10\) \/ 10/);
+  assert.match(app, /requests: \[prev\.requests/);
+  assert.doesNotMatch(app, /setIsometricView\(\{ \.\.\.baseImage \}\)/);
+  assert.match(studio, /시안 이미지는 그대로 유지됩니다/);
+});

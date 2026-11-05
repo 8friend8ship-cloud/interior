@@ -210,7 +210,7 @@ export const UserInputForm: React.FC<UserInputFormProps> = ({ onSubmit, error })
   const checkFormValidity = () => {
       let valid = false;
       if (activeTab === 'full') {
-          valid = !!area && !!targetDate && !!moveInDate && !!image && isScopeConfirmed;
+          valid = Number.isFinite(Number(area)) && Number(area) > 0 && !!targetDate && !!image && isScopeConfirmed;
       } else if (activeTab === 'bathroom') {
           if (useDimensionsOnly) {
               valid = !!targetDate && !!bathWidth && !!bathDepth && !!bathHeight;
@@ -319,7 +319,7 @@ export const UserInputForm: React.FC<UserInputFormProps> = ({ onSubmit, error })
       setItemNotes(prev => ({ ...prev, [key]: value }));
   };
 
-  const [wants3D, setWants3D] = useState(true);
+  const [wants3D, setWants3D] = useState(false);
 
   // Default Materials from Admin
   const [defaultMaterials, setDefaultMaterials] = useState<MaterialDatabaseItem[]>([]);
@@ -387,8 +387,8 @@ export const UserInputForm: React.FC<UserInputFormProps> = ({ onSubmit, error })
         imageData = await toBase64(image.file);
         mimeType = image.file.type;
     } else {
-        imageData = MOCK_IMAGE_BASE64; 
-        mimeType = "image/gif";
+        imageData = ''; // No uploaded plan: never send an unmarked demo image as customer evidence.
+        mimeType = '';
     }
     
     let bathroomSpecifics: BathroomSpecifics | undefined;
@@ -429,7 +429,7 @@ export const UserInputForm: React.FC<UserInputFormProps> = ({ onSubmit, error })
     }
 
     const areaValue = parseFloat(area);
-    const finalAreaPy = areaUnit === 'm2' ? Math.round(areaValue / 3.3058) : areaValue;
+    const finalAreaPy = areaUnit === 'm2' ? Math.round((areaValue / 3.3058) * 10) / 10 : areaValue;
     const calculatedBathCount = activeTab === 'full' ? (userBathCount || 1) : bathOnlyCount;
     const finalAdminScopes = adminMode === 'self' 
         ? { permit: false, consent: false, protection: false } 
@@ -572,17 +572,17 @@ export const UserInputForm: React.FC<UserInputFormProps> = ({ onSubmit, error })
 
       <div className="flex border-b bg-gray-50">
         <button className={`flex-1 py-4 font-bold text-center transition-colors text-sm ${activeTab === 'full' ? 'text-indigo-600 border-b-2 border-indigo-600 bg-white' : 'text-gray-500 hover:text-gray-700'}`} onClick={() => setActiveTab('full')}>
-          🏠 전체 인테리어 (All-in-One)
+          🏠 전체 인테리어
         </button>
         <button className={`flex-1 py-4 font-bold text-center transition-colors text-sm ${activeTab === 'bathroom' ? 'text-indigo-600 border-b-2 border-indigo-600 bg-white' : 'text-gray-500 hover:text-gray-700'}`} onClick={() => setActiveTab('bathroom')}>
-          🛁 욕실 집중 (Bathroom Only)
+          🛁 욕실 집중
         </button>
         <button className={`flex-1 py-4 font-bold text-center transition-colors text-sm ${activeTab === 'sash' ? 'text-indigo-600 border-b-2 border-indigo-600 bg-white' : 'text-gray-500 hover:text-gray-700'}`} onClick={() => setActiveTab('sash')}>
-          🪟 샤시 집중 (Sash Only)
+          🪟 창호 집중
         </button>
       </div>
       
-      <div className="p-8">
+      <div className="p-4 sm:p-8">
         {error && <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">{error}</div>}
 
         <form onSubmit={handleSubmit} className="space-y-8">
@@ -1102,9 +1102,9 @@ export const UserInputForm: React.FC<UserInputFormProps> = ({ onSubmit, error })
                         className="w-5 h-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500" 
                     />
                     <div className="ml-3">
-                        <span className="font-bold text-blue-800 text-sm">AI 3D 디자인 시안 생성 (추천)</span>
+                        <span className="font-bold text-blue-800 text-sm">3D 디자인 시안 요청 (선택)</span>
                         <p className="text-xs text-blue-600 mt-0.5">
-                            체크 시 우리 집 구조에 맞는 아이소메트릭/투시도 이미지를 생성합니다. (약 30초 추가 소요)
+                            검증된 렌더 백엔드가 연결된 경우에만 실행됩니다. 기본은 견적부터 확인하며, 실패 시 임의 이미지를 보여주지 않습니다.
                         </p>
                     </div>
                 </label>
@@ -1166,7 +1166,7 @@ export const UserInputForm: React.FC<UserInputFormProps> = ({ onSubmit, error })
                       : 'bg-indigo-600 hover:bg-indigo-700 hover:shadow-lg transform hover:-translate-y-0.5'
                     }`}
                 >
-                  {activeTab === 'bathroom' ? '🛁 전문가급 욕실 상세 견적 산출하기' : activeTab === 'sash' ? '🪟 전문가급 샤시 상세 견적 산출하기' : '✨ AI 인테리어 디자인 & 견적 받아보기'}
+                  {activeTab === 'bathroom' ? '🛁 전문가급 욕실 상세 견적 산출하기' : activeTab === 'sash' ? '🪟 전문가급 샤시 상세 견적 산출하기' : (wants3D ? '🎨 3D 디자인 시안 및 견적 요청하기' : '📋 선택한 공사 견적 확인하기')}
                 </button>
                 {activeTab === 'full' && (
                      <button onClick={handleDemoSubmit} className="text-xs text-gray-400 underline hover:text-gray-600 text-center">

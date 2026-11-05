@@ -28,6 +28,7 @@ export const DesignStudio: React.FC<DesignStudioProps> = ({
 }) => {
   const [activeView, setActiveView] = useState<ActiveView>('iso');
   const [stylePrompt, setStylePrompt] = useState('');
+  const [styleNoteSaved, setStyleNoteSaved] = useState(false);
 
   const currentView = activeView === 'iso' ? isometricView : perspectiveView;
   const viewName = activeView === 'iso' ? '아이소 뷰' : '투시도';
@@ -38,6 +39,8 @@ export const DesignStudio: React.FC<DesignStudioProps> = ({
       return;
     }
     onModifyStyle(activeView, stylePrompt);
+    setStyleNoteSaved(true);
+    setStylePrompt('');
   };
 
   const ViewTabButton: React.FC<{ viewType: ActiveView; label: string; }> = ({ viewType, label }) => (
@@ -54,9 +57,9 @@ export const DesignStudio: React.FC<DesignStudioProps> = ({
   );
 
   return (
-    <div className="max-w-7xl mx-auto bg-white p-8 rounded-xl shadow-lg">
+    <div className="max-w-7xl mx-auto bg-white p-4 sm:p-8 rounded-xl shadow-lg">
       <h2 className="text-3xl font-bold text-center text-gray-800 mb-2">AI 디자인 스튜디오</h2>
-      <p className="text-center text-gray-500 mb-8">생성된 뷰를 확인하고, 자연어로 스타일을 변경하거나 디자인을 확정하세요.</p>
+      <p className="text-center text-gray-500 mb-8">현재 시안을 확인하고 변경 희망사항을 견적 요청에 남기거나 디자인을 확정하세요.</p>
       
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-8 items-start">
         <div className="lg:col-span-3">
@@ -81,11 +84,11 @@ export const DesignStudio: React.FC<DesignStudioProps> = ({
 
         <div className="lg:col-span-2 flex flex-col h-full space-y-6">
             <div className="p-4 border rounded-lg bg-gray-50">
-                <h3 className="text-lg font-semibold text-gray-800 mb-2">1. 분위기 수정 (AI 스타일 편집)</h3>
-                <p className="text-sm text-gray-500 mb-3">현재 선택된 <span className="font-bold text-indigo-600">{viewName}</span>의 마감재, 색감, 조명 등을 수정합니다. 구조는 변경되지 않습니다.</p>
+                <h3 className="text-lg font-semibold text-gray-800 mb-2">1. 디자인 변경 희망사항 기록</h3>
+                <p className="text-sm text-gray-500 mb-3">현재 <span className="font-bold text-indigo-600">{viewName}</span>의 마감재·색상·조명 변경 희망사항을 견적 메모에 저장합니다. 이 단계에서 이미지는 자동으로 바뀌지 않습니다.</p>
                 <textarea
                     value={stylePrompt}
-                    onChange={(e) => setStylePrompt(e.target.value)}
+                    onChange={(e) => { setStylePrompt(e.target.value); setStyleNoteSaved(false); }}
                     rows={3}
                     className="w-full px-3 py-2 text-sm bg-white text-gray-900 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
                     placeholder={`예: 바닥을 밝은 원목으로, 벽을 흰색으로 바꿔줘`}
@@ -95,8 +98,9 @@ export const DesignStudio: React.FC<DesignStudioProps> = ({
                     disabled={isModifying}
                     className="mt-3 w-full bg-gray-700 text-white font-bold py-2 px-4 rounded-md hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition duration-300 ease-in-out disabled:bg-gray-400"
                 >
-                  {isModifying ? '스타일 적용 중...' : 'AI 스타일 수정 요청'}
+                  {isModifying ? '요청사항 저장 중...' : '견적 요청사항에 메모 추가'}
                 </button>
+                {styleNoteSaved && <p role="status" className="text-xs text-green-700 mt-2">변경 희망사항을 견적 요청에 추가했습니다. 시안 이미지는 그대로 유지됩니다.</p>}
             </div>
              {error && <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">{error}</div>}
              <div className="p-4 border rounded-lg bg-gray-50">

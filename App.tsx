@@ -152,18 +152,18 @@ const App: React.FC = () => {
     await processProject(detailsWithContext);
   }, [marketplaceContext, siteContext, estimateRequest]);
 
-  const handleStyleModification = useCallback(async (viewToModify: 'iso' | 'pers') => {
-    const baseImage = viewToModify === 'iso' ? isometricView : perspectiveView;
-    if (!projectDetails || !baseImage) return;
-    setIsModifying(true);
+  // Save a design-change request for the verified estimate backend.
+  // Do not fake a regenerated image by redisplaying the same base64 data.
+  const handleStyleModification = useCallback((viewToModify: 'iso' | 'pers', prompt: string) => {
+    const note = prompt.trim();
+    if (!note) return;
+    const target = viewToModify === 'iso' ? '아이소메트릭 뷰' : '실내 투시도';
+    setProjectDetails(prev => prev ? {
+      ...prev,
+      requests: [prev.requests, `[${target} 디자인 변경 요청] ${note}`].filter(Boolean).join('\n'),
+    } : prev);
     setError(null);
-    try {
-        if (viewToModify === 'iso') setIsometricView({ ...baseImage });
-        else setPerspectiveView({ ...baseImage });
-    } finally {
-        setIsModifying(false);
-    }
-  }, [projectDetails, isometricView, perspectiveView]);
+  }, []);
 
   const handleFinalizeDesign = useCallback(async () => {
     if (!projectDetails) return;
