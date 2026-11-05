@@ -30,7 +30,7 @@ type TabType = 'full' | 'bathroom' | 'sash';
 type UnitType = 'py' | 'm2';
 
 // CheckboxItem moved outside for stability
-const CheckboxItem = ({ id, label, checked, onChange, notePlaceholder, subLabel }: { id: string; label: string; checked: boolean; onChange: () => void, notePlaceholder?: string, subLabel?: string }) => (
+const CheckboxItem = ({ id, label, checked, onChange, notePlaceholder, noteValue, onNoteChange, subLabel }: { id: string; label: string; checked: boolean; onChange: () => void; notePlaceholder?: string; noteValue?: string; onNoteChange?: (value: string) => void; subLabel?: string }) => (
     <div className={`p-3 rounded-lg border transition-all ${checked ? 'bg-indigo-50 border-indigo-500' : 'bg-white border-gray-200 hover:bg-gray-50'}`}>
         <label className="flex items-center cursor-pointer">
           <input type="checkbox" checked={checked} onChange={onChange} className="w-5 h-5 text-indigo-600 rounded focus:ring-indigo-500 mr-3" />
@@ -44,6 +44,9 @@ const CheckboxItem = ({ id, label, checked, onChange, notePlaceholder, subLabel 
                 <input 
                   type="text" 
                   placeholder={notePlaceholder}
+                  value={noteValue || ''}
+                  onChange={(e) => onNoteChange?.(e.target.value)}
+                  aria-label={`${label} 상세 메모`}
                   className="w-full text-xs p-2 border border-indigo-200 rounded bg-white text-gray-900 focus:outline-none focus:border-indigo-500"
                   onClick={(e) => e.stopPropagation()} // Prevent bubbling
                 />
@@ -89,12 +92,13 @@ export const UserInputForm: React.FC<UserInputFormProps> = ({ onSubmit, error })
   // ==================================================================================
   
   // 1. Basic Scope Checklist (Main Toggles)
+  // No trade is selected until the customer chooses an item or the all-in-one preset.
   const [scopes, setScopes] = useState<ProjectScopeFlags>({
-      sash: true, door: true, bath1: true, bath2: true, 
-      molding: true, flatCeiling: true, kitchenSink: true, 
-      balconyPaint: true, film: true, builtIn: true,
-      electrical: true, entryDoor: false, insulation: false, systemAC: false,
-      expansion: false, tile: true, wallpaper: true, flooring: true,
+      sash: false, door: false, bath1: false, bath2: false,
+      molding: false, flatCeiling: false, kitchenSink: false,
+      balconyPaint: false, film: false, builtIn: false,
+      electrical: false, entryDoor: false, insulation: false, systemAC: false,
+      expansion: false, tile: false, wallpaper: false, flooring: false,
   });
 
   // 2. Detailed Scopes
@@ -156,7 +160,7 @@ export const UserInputForm: React.FC<UserInputFormProps> = ({ onSubmit, error })
   const [adminScopes, setAdminScopes] = useState({ permit: false, consent: true, protection: true });
 
   const [isScopeConfirmed, setIsScopeConfirmed] = useState(false);
-  const [isCheckingConflicts, setIsCheckingConflicts] = useState(false);
+  const [presetApplied, setPresetApplied] = useState(false);
   const [itemNotes, setItemNotes] = useState<Record<string, string>>({});
 
   // Quantities
@@ -223,16 +227,9 @@ export const UserInputForm: React.FC<UserInputFormProps> = ({ onSubmit, error })
       setIsFormValid(valid);
   };
 
-  const handleConfirmationChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-      const isChecked = e.target.checked;
-      if (!isChecked) {
-          setIsScopeConfirmed(false);
-          return;
-      }
-      setIsCheckingConflicts(true);
-      await new Promise(resolve => setTimeout(resolve, 400));
-      setIsScopeConfirmed(true);
-      setIsCheckingConflicts(false);
+  const handleConfirmationChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+      // Confirmation is user acknowledgement, not an AI consistency check.
+      setIsScopeConfirmed(e.target.checked);
   };
 
   const handleStandardPreset = () => {
@@ -246,14 +243,9 @@ export const UserInputForm: React.FC<UserInputFormProps> = ({ onSubmit, error })
           tile: true, wallpaper: true, flooring: true
       });
       setIsScopeConfirmed(false);
+      setPresetApplied(true);
       
-      let displayArea = area || '32';
-      if (areaUnit === 'm2' && area) {
-         displayArea = `${Math.round(parseFloat(area) / 3.3058)}평 (${area}㎡)`;
-      } else {
-         displayArea = `${displayArea}평`;
-      }
-      alert(`✅ 입력하신 [${displayArea}] 기준으로 표준 공사 내용이 자동 설정되었습니다.\n\n하단의 상세 체크리스트를 반드시 확인해주세요.`);
+      // Inline status replaces the blocking browser alert.
   };
 
   const getButtonText = () => {
@@ -300,6 +292,7 @@ export const UserInputForm: React.FC<UserInputFormProps> = ({ onSubmit, error })
   
   const handleScopeChange = (key: keyof ProjectScopeFlags) => {
       setScopes(prev => ({ ...prev, [key]: !prev[key] }));
+      setPresetApplied(false);
       setIsScopeConfirmed(false);
   };
 
@@ -317,6 +310,7 @@ export const UserInputForm: React.FC<UserInputFormProps> = ({ onSubmit, error })
 
   const handleItemNoteChange = (key: string, value: string) => {
       setItemNotes(prev => ({ ...prev, [key]: value }));
+      setIsScopeConfirmed(false);
   };
 
   const [wants3D, setWants3D] = useState(false);
@@ -561,7 +555,13 @@ export const UserInputForm: React.FC<UserInputFormProps> = ({ onSubmit, error })
       else ref.current?.focus();
   };
 
-  const hasSelectedScopes = Object.values(scopes).some(v => v === true);
+  const selectedScopeCount = Object.values(scopes).filter(Boolean).length;
+  const hasSelectedScopes = selectedScopeCount > 0;
+  const clearScopes = () => {
+    setScopes(prev => Object.fromEntries(Object.keys(prev).map(key => [key, false])) as unknown as ProjectScopeFlags);
+    setPresetApplied(false);
+    setIsScopeConfirmed(false);
+  };
 
   return (
     <div className="max-w-3xl mx-auto bg-white rounded-xl shadow-lg overflow-hidden border border-gray-100">
@@ -629,14 +629,14 @@ export const UserInputForm: React.FC<UserInputFormProps> = ({ onSubmit, error })
                             </div>
                         )}
                         {!useDimensionsOnly && (
-                            <div onDragEnter={handleDrag} onDragOver={handleDrag} onDragLeave={handleDrag} onDrop={handleDrop} className={`flex justify-center px-6 pt-5 pb-6 border-2 ${isDragging ? 'border-indigo-600' : 'border-gray-300'} border-dashed rounded-md bg-gray-50 transition-colors`}>{image ? (<div className="text-center"><img src={image.preview} alt="미리보기" className="mx-auto h-32 w-auto rounded-lg mb-2 shadow-sm" /><button type="button" onClick={() => setImage(null)} className="text-xs text-red-600 underline hover:text-red-800">이미지 삭제</button></div>) : (<div className="text-center"><label htmlFor="file-upload" className="cursor-pointer text-indigo-600 hover:text-indigo-500 text-sm font-medium"><span>도면/사진 업로드</span><input id="file-upload" name="file-upload" type="file" className="sr-only" accept="image/*" onChange={e => handleFileChange(e.target.files)} /></label><p className="text-xs text-gray-500 mt-1">JPG, PNG, PDF</p></div>)}</div>
+                            <div onDragEnter={handleDrag} onDragOver={handleDrag} onDragLeave={handleDrag} onDrop={handleDrop} className={`flex justify-center px-6 pt-5 pb-6 border-2 ${isDragging ? 'border-indigo-600' : 'border-gray-300'} border-dashed rounded-md bg-gray-50 transition-colors`}>{image ? (<div className="text-center"><img src={image.preview} alt="미리보기" className="mx-auto h-32 w-auto rounded-lg mb-2 shadow-sm" /><button type="button" onClick={() => setImage(null)} className="text-xs text-red-600 underline hover:text-red-800">이미지 삭제</button></div>) : (<div className="text-center"><label htmlFor="file-upload" className="cursor-pointer text-indigo-600 hover:text-indigo-500 text-sm font-medium"><span>도면/사진 업로드</span><input id="file-upload" name="file-upload" type="file" className="sr-only" accept="image/*" onChange={e => handleFileChange(e.target.files)} /></label><p className="text-xs text-gray-500 mt-1">JPG·PNG 등 이미지 파일 (PDF는 추후 지원)</p></div>)}</div>
                         )}
                     </div>
                 )}
 
                 {/* --- FULL MODE IMAGE UPLOAD --- */}
                 {activeTab === 'full' && (
-                    <div className="mt-4"><label className="block text-xs font-semibold text-gray-600 mb-1">도면 이미지 <span className="text-red-500">*</span></label><div onDragEnter={handleDrag} onDragOver={handleDrag} onDragLeave={handleDrag} onDrop={handleDrop} className={`flex justify-center px-6 pt-5 pb-6 border-2 ${isDragging ? 'border-indigo-600' : 'border-gray-300'} border-dashed rounded-md bg-gray-50 transition-colors`}>{image ? (<div className="text-center"><img src={image.preview} alt="미리보기" className="mx-auto h-32 w-auto rounded-lg mb-2 shadow-sm" /><button type="button" onClick={() => setImage(null)} className="text-xs text-red-600 underline hover:text-red-800">이미지 삭제</button></div>) : (<div className="text-center"><label htmlFor="file-upload" className="cursor-pointer text-indigo-600 hover:text-indigo-500 text-sm font-medium"><span>파일 업로드</span><input id="file-upload" name="file-upload" type="file" className="sr-only" accept="image/*" onChange={e => handleFileChange(e.target.files)} /></label><p className="text-xs text-gray-500 mt-1">또는 드래그 앤 드롭</p></div>)}</div></div>
+                    <div className="mt-4"><label className="block text-xs font-semibold text-gray-600 mb-1">도면 또는 공간 사진 <span className="text-red-500">*</span></label><div onDragEnter={handleDrag} onDragOver={handleDrag} onDragLeave={handleDrag} onDrop={handleDrop} className={`flex justify-center px-6 pt-5 pb-6 border-2 ${isDragging ? 'border-indigo-600' : 'border-gray-300'} border-dashed rounded-md bg-gray-50 transition-colors`}>{image ? (<div className="text-center"><img src={image.preview} alt="미리보기" className="mx-auto h-32 w-auto rounded-lg mb-2 shadow-sm" /><button type="button" onClick={() => setImage(null)} className="text-xs text-red-600 underline hover:text-red-800">이미지 삭제</button></div>) : (<div className="text-center"><label htmlFor="file-upload" className="cursor-pointer text-indigo-600 hover:text-indigo-500 text-sm font-medium"><span>파일 업로드</span><input id="file-upload" name="file-upload" type="file" className="sr-only" accept="image/*" onChange={e => handleFileChange(e.target.files)} /></label><p className="text-xs text-gray-500 mt-1">또는 드래그 앤 드롭</p></div>)}</div></div>
                 )}
             </div>
 
@@ -647,7 +647,8 @@ export const UserInputForm: React.FC<UserInputFormProps> = ({ onSubmit, error })
                         <svg className="w-5 h-5 text-yellow-300" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clipRule="evenodd" /></svg>
                         🚀 {getButtonText()} 올수리 표준 견적 (간편설정)
                     </button>
-                    <p className="text-center text-xs text-gray-500 mt-2">* 1번에 입력하신 평수를 기준으로, 가장 많이 선택하는 '표준 공사' 항목이 자동 체크됩니다.<br/>(버튼 클릭 후 아래 공사 내용 리스트를 반드시 확인해주세요)</p>
+                    <p className="text-center text-xs text-gray-500 mt-2">전체 리모델링을 원할 때만 선택하세요. 아래 목록에서 공사 항목을 빼거나 추가할 수 있습니다.</p>
+                    {presetApplied && <p role="status" className="mt-2 rounded-lg bg-green-50 p-3 text-center text-sm text-green-800">표준 올수리 항목을 선택했습니다. 아래 내용을 확인하세요.</p>}
                 </div>
             )}
 
@@ -656,26 +657,31 @@ export const UserInputForm: React.FC<UserInputFormProps> = ({ onSubmit, error })
             {/* ================================================================================== */}
             {activeTab === 'full' && (
                 <div className="bg-white p-5 rounded-lg border border-gray-200 shadow-sm animate-fade-in-up">
-                    <h3 className="text-sm font-bold text-gray-900 mb-4 border-b pb-2 flex items-center"><span className="bg-indigo-600 text-white w-5 h-5 rounded-full flex items-center justify-center text-xs mr-2">2</span>공사 범위 선택 (Checklist)</h3>
+                    <h3 className="text-sm font-bold text-gray-900 mb-3 border-b pb-2 flex items-center"><span className="bg-indigo-600 text-white w-5 h-5 rounded-full flex items-center justify-center text-xs mr-2">2</span>원하는 공사를 선택하세요</h3>
+                    <div className="mb-4 flex flex-wrap items-center justify-between gap-2 text-sm">
+                      <span className="font-semibold text-indigo-700">현재 {selectedScopeCount}개 공사 선택됨</span>
+                      <button type="button" onClick={clearScopes} className="rounded-lg border border-gray-300 bg-gray-50 px-3 py-2 font-medium text-gray-700">전체 선택 해제</button>
+                    </div>
+                    {!hasSelectedScopes && <p role="status" className="mb-3 text-sm text-red-700">견적을 원하는 공사 항목을 하나 이상 선택해 주세요.</p>}
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-2">
-                         <CheckboxItem id="sash" label="샷시 (창호 교체)" checked={scopes.sash} onChange={() => handleScopeChange('sash')} notePlaceholder="예: 거실 발코니창만 이중창으로 변경" />
+                         <CheckboxItem id="sash" label="샷시 (창호 교체)" checked={scopes.sash} onChange={() => handleScopeChange('sash')} notePlaceholder="예: 거실 발코니창만 이중창으로 변경" noteValue={itemNotes.sash} onNoteChange={(v) => handleItemNoteChange('sash', v)} />
                          <CheckboxItem id="door" label="도어/문틀 공사" checked={scopes.door} onChange={() => handleScopeChange('door')} />
                          <CheckboxItem id="bath1" label="안방 욕실 리모델링 (간단)" checked={scopes.bath1} onChange={() => handleScopeChange('bath1')} subLabel="※ 상세 견적은 '욕실 집중' 탭 이용 권장" />
                          <CheckboxItem id="bath2" label="거실 욕실 리모델링 (간단)" checked={scopes.bath2} onChange={() => handleScopeChange('bath2')} subLabel="※ 상세 견적은 '욕실 집중' 탭 이용 권장" />
                          <CheckboxItem id="kitchen" label="주방 싱크대 교체" checked={scopes.kitchenSink} onChange={() => handleScopeChange('kitchenSink')} />
                          <CheckboxItem id="systemAC" label="시스템 에어컨" checked={scopes.systemAC} onChange={() => handleScopeChange('systemAC')} />
-                         <CheckboxItem id="expansion" label="확장 공사 (신규 진행)" checked={scopes.expansion} onChange={() => handleScopeChange('expansion')} notePlaceholder="예: 작은방 1개소 확장, 보일러 배관 연결 포함" />
+                         <CheckboxItem id="expansion" label="확장 공사 (신규 진행)" checked={scopes.expansion} onChange={() => handleScopeChange('expansion')} notePlaceholder="예: 작은방 1개소 확장, 보일러 배관 연결 포함" noteValue={itemNotes.expansion} onNoteChange={(v) => handleItemNoteChange('expansion', v)} />
                          <CheckboxItem id="tile" label="타일 시공" checked={scopes.tile} onChange={() => handleScopeChange('tile')} />
                          <CheckboxItem id="wallpaper" label="도배/도장 (벽면 마감)" checked={scopes.wallpaper} onChange={() => handleScopeChange('wallpaper')} />
                          <CheckboxItem id="flooring" label="바닥 시공 (마루/장판/타일)" checked={scopes.flooring} onChange={() => handleScopeChange('flooring')} />
-                         <CheckboxItem id="molding" label="목공 천장 몰딩/등박스" checked={scopes.molding} onChange={() => handleScopeChange('molding')} notePlaceholder="예: 거실 마이너스 몰딩, 방 평몰딩" />
+                         <CheckboxItem id="molding" label="목공 천장 몰딩/등박스" checked={scopes.molding} onChange={() => handleScopeChange('molding')} notePlaceholder="예: 거실 마이너스 몰딩, 방 평몰딩" noteValue={itemNotes.molding} onNoteChange={(v) => handleItemNoteChange('molding', v)} />
                          <CheckboxItem id="flat" label="목공 천장 공사 (전체/덧방)" checked={scopes.flatCeiling} onChange={() => handleScopeChange('flatCeiling')} />
                          <CheckboxItem id="paint" label="도장 공사 (발코니 전용)" checked={scopes.balconyPaint} onChange={() => handleScopeChange('balconyPaint')} />
                          <CheckboxItem id="film" label="필름 시공 (샷시/가구)" checked={scopes.film} onChange={() => handleScopeChange('film')} />
                          <CheckboxItem id="builtIn" label="붙박이장/신발장" checked={scopes.builtIn} onChange={() => handleScopeChange('builtIn')} />
                          <CheckboxItem id="elec" label="전기 (스위치/콘센트)" checked={scopes.electrical} onChange={() => handleScopeChange('electrical')} />
-                         <CheckboxItem id="entry" label="중문 설치 (기본:3연동)" checked={scopes.entryDoor} onChange={() => handleScopeChange('entryDoor')} notePlaceholder="기본: 3연동 슬라이딩 (변경 시 기입)" />
-                         <CheckboxItem id="insul" label="추가 단열 (벽체)" checked={scopes.insulation} onChange={() => handleScopeChange('insulation')} notePlaceholder="추가할 위치 (예: 북쪽방 외벽, 안방)" />
+                         <CheckboxItem id="entry" label="중문 설치 (기본:3연동)" checked={scopes.entryDoor} onChange={() => handleScopeChange('entryDoor')} notePlaceholder="기본: 3연동 슬라이딩 (변경 시 기입)" noteValue={itemNotes.entryDoor} onNoteChange={(v) => handleItemNoteChange('entryDoor', v)} />
+                         <CheckboxItem id="insul" label="추가 단열 (벽체)" checked={scopes.insulation} onChange={() => handleScopeChange('insulation')} notePlaceholder="추가할 위치 (예: 북쪽방 외벽, 안방)" noteValue={itemNotes.insulation} onNoteChange={(v) => handleItemNoteChange('insulation', v)} />
                     </div>
                 </div>
             )}
@@ -684,11 +690,11 @@ export const UserInputForm: React.FC<UserInputFormProps> = ({ onSubmit, error })
             {/* [RESTORED] STEP 3: DETAILED SPECS (FULL MODE) */}
             {/* ================================================================================== */}
             {activeTab === 'full' && hasSelectedScopes && (
-                <div className="bg-indigo-50 rounded-lg p-5 border border-indigo-100 shadow-sm animate-fade-in-up">
-                    <h3 className="text-sm font-bold text-indigo-900 mb-4 border-b border-indigo-200 pb-2 flex items-center">
-                        <span className="bg-indigo-600 text-white w-5 h-5 rounded-full flex items-center justify-center text-xs mr-2">3</span>
-                        상세 스펙 설정 (선택 항목)
-                    </h3>
+                <details className="rounded-lg border border-indigo-100 bg-indigo-50 p-4 shadow-sm">
+                    <summary className="cursor-pointer py-2 text-sm font-bold text-indigo-900">
+                        상세 자재·시공 사양 직접 조정하기 (선택)
+                    </summary>
+                    <p className="mb-4 text-xs text-indigo-800">펼치지 않으면 현재 표시된 기본 사양을 그대로 사용합니다. 단가와 수량은 검증 후 확정합니다.</p>
                     <div className="space-y-6">
                         
                         {/* Advanced Carpentry & Finishes */}
@@ -908,7 +914,7 @@ export const UserInputForm: React.FC<UserInputFormProps> = ({ onSubmit, error })
                             )}
                         </div>
                     </div>
-                </div>
+                </details>
             )}
 
             {/* Step 4. Confirmation (Full Mode Only) */}
@@ -920,14 +926,13 @@ export const UserInputForm: React.FC<UserInputFormProps> = ({ onSubmit, error })
                                 type="checkbox" 
                                 checked={isScopeConfirmed} 
                                 onChange={handleConfirmationChange} 
-                                disabled={isCheckingConflicts}
                                 className="w-5 h-5 text-red-600 border-gray-300 rounded focus:ring-red-500" 
                             />
                         </div>
                         <div className="ml-3 text-sm">
                             <span className="font-bold text-red-800">위 공사 내용으로 진행함을 확인합니다.</span>
                             <p className="text-xs text-red-600 mt-1">
-                                {isCheckingConflicts ? 'AI가 설정 충돌을 검사하고 있습니다...' : '체크 시 AI가 설정 간 충돌(예: 도장 마감에 1겹 석고) 여부를 검사합니다.'}
+                                선택한 공사 범위를 확인했다는 뜻입니다. 자동 시공 충돌 검사나 실측 검증을 의미하지 않습니다.
                             </p>
                         </div>
                     </label>
@@ -1157,11 +1162,24 @@ export const UserInputForm: React.FC<UserInputFormProps> = ({ onSubmit, error })
 
             {/* Submit Button */}
             <div className="flex flex-col gap-3">
+                {!isFormValid || (activeTab === 'full' && (!isScopeConfirmed || !hasSelectedScopes)) ? (
+                  <div role="status" className="rounded-lg bg-amber-50 p-3 text-sm text-amber-900">
+                    <strong>견적 확인 전 필요한 항목</strong>
+                    <ul className="mt-1 list-inside list-disc">
+                      {!targetDate && <li>공사 희망일을 선택하세요.</li>}
+                      {activeTab === 'full' && !image && <li>도면 또는 공간 사진을 추가하세요.</li>}
+                      {activeTab === 'full' && !hasSelectedScopes && <li>필요한 공사를 하나 이상 고르세요.</li>}
+                      {activeTab === 'full' && hasSelectedScopes && !isScopeConfirmed && <li>선택한 공사 범위를 확인해 주세요.</li>}
+                      {activeTab === 'bathroom' && !useDimensionsOnly && !image && <li>욕실 사진을 추가하거나 치수를 입력하세요.</li>}
+                      {activeTab === 'bathroom' && useDimensionsOnly && (!bathWidth || !bathDepth || !bathHeight) && <li>욕실 가로·세로·높이를 입력하세요.</li>}
+                    </ul>
+                  </div>
+                ) : null}
                 <button
                   type="submit"
-                  disabled={!isFormValid || (activeTab === 'full' && !isScopeConfirmed) || isCheckingConflicts}
+                  disabled={!isFormValid || (activeTab === 'full' && (!isScopeConfirmed || !hasSelectedScopes))}
                   className={`w-full flex justify-center py-4 px-4 border border-transparent rounded-lg shadow-sm text-lg font-bold text-white transition-all duration-300
-                    ${(!isFormValid || (activeTab === 'full' && !isScopeConfirmed) || isCheckingConflicts)
+                    ${(!isFormValid || (activeTab === 'full' && (!isScopeConfirmed || !hasSelectedScopes)))
                       ? 'bg-gray-400 cursor-not-allowed' 
                       : 'bg-indigo-600 hover:bg-indigo-700 hover:shadow-lg transform hover:-translate-y-0.5'
                     }`}

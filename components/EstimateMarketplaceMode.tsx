@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   EstimateBuildingUse,
   EstimateMarketplaceContext,
@@ -62,6 +62,7 @@ const templateVersionFor = (mode: EstimateTemplateMode) => {
 };
 
 export const EstimateMarketplaceMode: React.FC<EstimateMarketplaceModeProps> = ({ value, onChange }) => {
+  const [showAdvanced, setShowAdvanced] = useState(false);
   const setRole = (role: EstimateUserRole) => {
     const next = normalizeRoleTier(role, value.tier, value);
     const safe = role === 'CONSUMER' && next.templateMode === 'HOMEDESIGN_COST_MARGIN'
@@ -119,10 +120,16 @@ export const EstimateMarketplaceMode: React.FC<EstimateMarketplaceModeProps> = (
         <select id="estimate-building-use" value={value.buildingUse || 'RESIDENTIAL'} onChange={(e) => onChange({ ...value, buildingUse: e.target.value as EstimateBuildingUse })} className="mt-2 w-full rounded-xl border px-4 py-3 text-sm">{buildingUseOptions.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}</select>
       </div>
 
-      <div className="mt-5 border-t border-gray-100 pt-5">
+      <button type="button" aria-expanded={showAdvanced} onClick={() => setShowAdvanced(v => !v)}
+        className="mt-5 w-full rounded-xl border border-indigo-100 bg-indigo-50 px-4 py-3 text-left text-sm font-semibold text-indigo-800">
+        {showAdvanced ? '▾ 요금제·전문가 설정 접기' : '▸ 요금제·전문가 설정 보기'} · 현재 {value.tier === 'FREE' ? '무료' : 'PRO'}
+      </button>
+      {showAdvanced && (
+      <div className="mt-3 border-t border-gray-100 pt-4">
         <div className="flex items-center justify-between"><h3 className="font-bold">{value.tier === 'FREE' ? '무료 Standard 견적' : 'PRO 개인화 견적'}</h3><div className="flex gap-2">{(['FREE','PRO'] as EstimatePlanTier[]).map((tier) => <button key={tier} type="button" onClick={() => setTier(tier)} className={`rounded-full px-4 py-2 text-sm font-semibold ${value.tier === tier ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-600'}`}>{tier === 'FREE' ? '무료' : 'PRO'}</button>)}</div></div>
         {value.tier === 'PRO' && <div className="mt-4 grid gap-3 md:grid-cols-2">{templateOptions.map((option) => { const disabled = Boolean((option.supplierOnly && value.userRole !== 'SUPPLIER') || (option.mode === 'USER_CUSTOM' && !value.userProfileId)); return <button key={option.mode} type="button" disabled={disabled} onClick={() => setTemplate(option.mode)} className={`rounded-xl border p-4 text-left ${value.templateMode === option.mode ? 'border-indigo-500 bg-indigo-50' : disabled ? 'cursor-not-allowed bg-gray-50 opacity-55' : 'border-gray-200'}`}><div className="font-semibold">{option.title}</div><div className="mt-1 text-sm text-gray-500">{option.description}</div>{option.supplierOnly && value.userRole !== 'SUPPLIER' && <div className="mt-2 text-xs text-amber-700">업체 내부용</div>}</button>; })}</div>}
       </div>
+      )}
     </section>
   );
 };

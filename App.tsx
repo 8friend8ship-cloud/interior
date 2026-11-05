@@ -1,4 +1,5 @@
 import React, { useState, useCallback } from 'react';
+import { buildEstimateRequestSchema, validateEstimateRequest } from './services/estimateRequest';
 import { Header } from './components/Header';
 import { Footer } from './components/Footer';
 import { UserInputForm } from './components/UserInputForm';
@@ -33,13 +34,14 @@ import type { InteriorSiteContext } from './contracts/siteContext';
 const emptyEstimateRequest = (): EstimateRequestDraft => ({
   formSchemaId: '',
   version: 'ESTIMATE_REQUEST_V1_20260827',
-  answers: {},
+  answers: { materialGrade: 'standard', contactMethod: 'APP' },
   attachmentKinds: [],
   completedRequiredFields: false,
 });
 
 const App: React.FC = () => {
   const [appState, setAppState] = useState<AppState>(AppState.INPUT);
+  const [inputStep, setInputStep] = useState<1 | 2>(1);
   const [projectDetails, setProjectDetails] = useState<ProjectDetails | null>(null);
   const [isometricView, setIsometricView] = useState<{ data: string; mimeType: string; } | null>(null);
   const [perspectiveView, setPerspectiveView] = useState<{ data: string; mimeType: string; } | null>(null);
@@ -51,6 +53,7 @@ const App: React.FC = () => {
   const [marketplaceContext, setMarketplaceContext] = useState<EstimateMarketplaceContext>(() => loadMarketplaceContext());
   const [estimateRequest, setEstimateRequest] = useState<EstimateRequestDraft>(() => emptyEstimateRequest());
   const [siteContext, setSiteContext] = useState<InteriorSiteContext | null>(null);
+  const requestQa = validateEstimateRequest(buildEstimateRequestSchema(marketplaceContext), estimateRequest);
 
   const handleMarketplaceChange = useCallback((context: EstimateMarketplaceContext) => {
     setMarketplaceContext(context);
@@ -140,8 +143,9 @@ const App: React.FC = () => {
 
   const handleInitialSubmit = useCallback(async (details: ProjectDetails) => {
     saveMarketplaceContext(marketplaceContext);
-    if (!estimateRequest.completedRequiredFields) {
-      setError('견적 의뢰서의 필수 항목을 먼저 확인해 주세요. 비교견적·입찰 모드에서는 추가 질문과 필수 자료가 적용됩니다.');
+    if (!validateEstimateRequest(buildEstimateRequestSchema(marketplaceContext), estimateRequest).ok) {
+      setInputStep(1);
+      setError('1단계의 필수 정보를 확인해 주세요. 비교견적·입찰 모드에서는 추가 입력이 필요합니다.');
       return;
     }
     const detailsWithContext = {
@@ -231,6 +235,7 @@ const App: React.FC = () => {
 
   const handleReset = useCallback(() => {
     setAppState(AppState.INPUT);
+    setInputStep(1);
     setProjectDetails(null);
     setGeneratedPlan(null);
     setIsometricView(null);
@@ -242,19 +247,60 @@ const App: React.FC = () => {
     setLoadingSection(null);
   }, []);
 
+  const renderInputFlow = () => (
+    <div className="mx-auto max-w-5xl" data-testid="interior-simple-flow">
+      <div className="mb-6 rounded-2xl border border-indigo-100 bg-white p-4 shadow-sm sm:p-6">
+        <p className="text-xs font-semibold text-indigo-600">간편 견적 · 3단계</p>
+        <h2 className="mt-1 text-2xl font-bold text-gray-900">
+          {inputStep === 1 ? '어떤 공사를 계획하세요?' : '공간 정보와 공사 항목을 알려주세요'}
+        </h2>
+        <nav aria-label="견적 진행 단계" className="mt-4 grid grid-cols-3 gap-2 text-center text-xs sm:text-sm">
+          {(['① 견적 유형', '② 공간·공사', '③ 결과 확인'] as const).map((label, index) => (
+            <div key={label} aria-current={index === inputStep - 1 ? 'step' : undefined}
+              className={`rounded-lg px-2 py-3 font-semibold ${index === inputStep - 1 ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-600'}`}>
+              {label}
+            </div>
+          ))}
+        </nav>
+        <p className="mt-3 text-sm text-gray-600">
+          {inputStep === 1 ? '지역과 견적 유형을 정한 뒤 다음으로 이동하세요.' : '사진·도면과 원하는 공사를 선택하세요. 상세 사양은 필요할 때만 펼칠 수 있습니다.'}
+        </p>
+      </div>
+      {error && <p role="alert" className="mb-4 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">{error}</p>}
+      <div hidden={inputStep !== 1}>
+          <EstimateMarketplaceMode value={marketplaceContext} onChange={handleMarketplaceChange} />
+          <EstimateRequestForm context={marketplaceContext} value={estimateRequest} onChange={setEstimateRequest} />
+          <div className="mb-8 rounded-xl border border-gray-200 bg-white p-4">
+            <p className="mb-3 text-sm text-gray-600">
+              {requestQa.ok ? '필수 정보가 준비됐습니다.' : '지역 등 필수 항목을 입력하면 다음 단계로 이동할 수 있습니다.'}
+            </p>
+            <button type="button" disabled={!requestQa.ok} onClick={() => { setInputStep(2); setError(null); }}
+              className="w-full rounded-xl bg-indigo-600 px-5 py-4 font-bold text-white disabled:cursor-not-allowed disabled:bg-gray-300">
+              다음: 공간·공사 선택 →
+            </button>
+          </div>
+      </div>
+      <div hidden={inputStep !== 2}>
+          <button type="button" onClick={() => { setInputStep(1); setError(null); }}
+            className="mb-4 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700">
+            ← 견적 유형 수정
+          </button>
+          <details className="mb-5 rounded-xl border border-sky-200 bg-sky-50 p-4">
+            <summary className="cursor-pointer font-semibold text-sky-900">현장·도로·주차 근거 입력 (상세 견적 시 필요)</summary>
+            <p className="my-3 text-sm text-sky-800">현장 자료가 확인되지 않으면 검증된 실견적 금액을 확정할 수 없습니다.</p>
+            <SiteContextInput value={siteContext} onChange={setSiteContext} />
+          </details>
+          <UserInputForm onSubmit={handleInitialSubmit} error={error} />
+      </div>
+    </div>
+  );
+
   const renderContent = () => {
     const isBathroomMode = projectDetails?.projectScope === 'bathroom';
 
     switch (appState) {
       case AppState.INPUT:
-        return (
-          <>
-            <EstimateMarketplaceMode value={marketplaceContext} onChange={handleMarketplaceChange} />
-            <EstimateRequestForm context={marketplaceContext} value={estimateRequest} onChange={setEstimateRequest} />
-            <SiteContextInput value={siteContext} onChange={setSiteContext} />
-            <UserInputForm onSubmit={handleInitialSubmit} error={error} />
-          </>
-        );
+        return renderInputFlow();
       case AppState.ANALYZING_PLAN:
         return (
           <AdSenseLoadingOverlay
@@ -295,6 +341,11 @@ const App: React.FC = () => {
       case AppState.RESULTS:
         return generatedPlan && projectDetails && (
           <>
+            <div className="mx-auto mb-5 max-w-5xl rounded-xl border border-indigo-100 bg-white p-4">
+              <p className="text-xs font-semibold text-indigo-600">3단계 · 견적 결과</p>
+              <h2 className="text-xl font-bold text-gray-900">견적 분석 결과를 확인하세요</h2>
+              <p className="mt-1 text-sm text-gray-600">현장 실측·자재 단가 근거가 부족하면 금액이 표시되지 않을 수 있습니다.</p>
+            </div>
             <EstimateTemplateSummary context={marketplaceContext} />
             <ConnectedEstimateDetails plan={generatedPlan} bridgeStatus={bridgeStatus} />
             <ResultsDisplay
@@ -310,14 +361,7 @@ const App: React.FC = () => {
           </>
         );
       default:
-        return (
-          <>
-            <EstimateMarketplaceMode value={marketplaceContext} onChange={handleMarketplaceChange} />
-            <EstimateRequestForm context={marketplaceContext} value={estimateRequest} onChange={setEstimateRequest} />
-            <SiteContextInput value={siteContext} onChange={setSiteContext} />
-            <UserInputForm onSubmit={handleInitialSubmit} error={error} />
-          </>
-        );
+        return renderInputFlow();
     }
   };
 

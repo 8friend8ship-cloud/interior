@@ -42,7 +42,7 @@ test('consumer and supplier workflow modes are exposed in the front UI', () => {
 
 test('dynamic estimate request form is wired and blocks incomplete required fields', () => {
   assert.match(app, /<EstimateRequestForm context=\{marketplaceContext\} value=\{estimateRequest\} onChange=\{setEstimateRequest\}/);
-  assert.match(app, /!estimateRequest\.completedRequiredFields/);
+  assert.match(app, /!validateEstimateRequest\(buildEstimateRequestSchema\(marketplaceContext\), estimateRequest\)\.ok/);
   assert.match(app, /estimateRequest,/);
   for (const token of ['COMPARE','TENDER','REGISTER_BID','AUTOMATION','compareCount','tenderDeadline','bidPackage','providerRegistration','pricingProfile','materialGrade']) assert.match(requestService, new RegExp(token));
   assert.match(requestService, /resolveEstimateRequestRoute/);
@@ -183,4 +183,20 @@ test('Aside consumer UX keeps verified estimate first and blocks silent mock pla
   assert.match(app, /requests: \[prev\.requests/);
   assert.doesNotMatch(app, /setIsometricView\(\{ \.\.\.baseImage \}\)/);
   assert.match(studio, /시안 이미지는 그대로 유지됩니다/);
+  assert.match(app, /data-testid="interior-simple-flow"/);
+  assert.match(app, /inputStep === 1/);
+  assert.match(app, /disabled=\{!requestQa\.ok\}/);
+  assert.match(app, /현장·도로·주차 근거 입력/);
+  assert.match(form, /<details className="rounded-lg border border-indigo-100/);
+  assert.match(form, /전체 선택 해제/);
+  assert.match(app, /<div hidden=\{inputStep !== 1\}>/);
+  assert.match(app, /<div hidden=\{inputStep !== 2\}>/);
+  assert.match(form, /sash: false, door: false, bath1: false/);
+  assert.match(form, /onNoteChange=\{\(v\) => handleItemNoteChange\('sash', v\)\}/);
+  assert.match(form, /견적 확인 전 필요한 항목/);
+  assert.doesNotMatch(form, /await new Promise\(resolve => setTimeout\(resolve, 400\)\)/);
+  const marketplaceUi = readFileSync('components/EstimateMarketplaceMode.tsx', 'utf8');
+  const requestUi = readFileSync('components/EstimateRequestForm.tsx', 'utf8');
+  assert.match(marketplaceUi, /aria-expanded=\{showAdvanced\}/);
+  assert.match(requestUi, /선택 항목 접기/);
 });
