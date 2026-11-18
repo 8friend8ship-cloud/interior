@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 # Isolated 2026-11-18 SEED_SKP_01 root four real inner-loop faces Native SketchUp mesh.
-# Never save model. This local concrete runner contains protected local paths: do NOT commit this copy.
+# Never save model. Sanitized reusable template; protected paths, GUID and face IDs are supplied at runtime.
 require 'json'
 require 'time'
 module Seed01FourHoleNativeV3
