@@ -1,0 +1,16 @@
+{
+  "name": "interior-threejs-local-glb-viewer-qa",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 127.0.0.1",
+    "test": "node --test",
+    "build": "vite build --outDir dist"
+  },
+  "dependencies": {
+    "three": "^0.181.0"
+  },
+  "devDependencies": {
+    "vite": "^6.2.0"
+  }
+}
