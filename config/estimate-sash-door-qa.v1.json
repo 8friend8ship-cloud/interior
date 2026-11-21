@@ -167,5 +167,26 @@
     "READY_FOR_INDEPENDENT_QA",
     "APPROVED_FOR_CUSTOMER",
     "APPROVED_FOR_ORDER"
-  ]
+  ],
+  "drawing_pre_post_qa_contract": {
+    "required_globally_for_all_new_drawings": true,
+    "config_path": "config/drawing-crosscheck-pack-gates.v1.json",
+    "source_comparison": "KB AND Npay/Naver by actual unit subtype",
+    "pre_review": [
+      "gemini_eye",
+      "gemini_pack",
+      "codex_pack",
+      "aside_rea"
+    ],
+    "post_review": [
+      "gemini_eye",
+      "gemini_pack",
+      "codex_pack",
+      "aside_rea",
+      "native_reopen",
+      "BOM_unique_keys"
+    ],
+    "review_receipt_policy": "Must be ACTUALLY_EXECUTED, do not count PLANNED_ONLY as PASS",
+    "native_pipeline_enforcement": "NOT_DEPLOYED_ON_PRODUCTION"
+  }
 }
