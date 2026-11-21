@@ -1,0 +1,128 @@
+{
+  "schema": "homedesign.room-topology.crosscheck.npay104.v4",
+  "project": "HD_YONGHYEON_HYUNDAI1_104",
+  "date": "2026-11-21",
+  "evidence": {
+    "npay_image": "https://drive.google.com/file/d/1nl6698-cEY9dk24spQoFDNPMUuMQnTdE/view",
+    "kb_image_url": "https://kbland.kr/se/c/4441",
+    "side_by_side": "https://drive.google.com/file/d/1xpFB1eauIqXIMMQLlK917YtTwtx-werj/view",
+    "anotated_user_image": "https://drive.google.com/file/d/1uKwAjdyXx9_9nbQ-9fECoQqIruQE_PT_/view",
+    "comparison": "KB original image rotated 90° CCW matches Npay supplied screenshot room adjacency; actual client unit verified? NO"
+  },
+  "previous": {
+    "invalid_models": [
+      "HD_YONGHYEON_HYUNDAI1_104_SCHEMA_V0_20261121.skp",
+      "HD_YONGHYEON_HYUNDAI1_104_OPENING_QA_V1_20261121.skp",
+      "HD_YONGHYEON_HYUNDAI1_104_SASH_DOOR_QA_V2_20261121.skp",
+      "HD_YONGHYEON_HYUNDAI1_104_SASH_DOOR_QA_V2R_20261121.skp",
+      "HD_YONGHYEON_HYUNDAI1_104_PRE_CUT_HOLD_V3_20261121.skp"
+    ],
+    "reason": "Incorrect room orientation and labels, main bedroom mapped lower-left rather than lower-right; DOOR D03 and WINDOW W03 wrong, entire prior layout superseded",
+    "modified_originals": false
+  },
+  "canonical_v4": {
+    "skp": "https://drive.google.com/file/d/1a-Hrh6MBYlaoBvU1fwzibaNYEWeL8-xR/view",
+    "top": "https://drive.google.com/file/d/1eZ8Kh2iR5DUYE9mpSmo8-vJEp_u9Ghj2/view",
+    "iso": "https://drive.google.com/file/d/1X0HhuYX0CECVpgojYK8cpSEQz1iyYheo/view",
+    "sha256": "73BE9DBC2AC66D009137D6773D9C9FBC4C03DAF9DC38D6F31722A5C8EE79B783",
+    "native_reopen_x1_x2": "EXECUTED_PASS",
+    "measured_floorplan": false,
+    "actual_wall_cut_count": 0,
+    "real_window_door_asset_installed": false
+  },
+  "zones": [
+    {
+      "id": "BED_WEST",
+      "label_m2": 9.72,
+      "location": "TOP_LEFT"
+    },
+    {
+      "id": "BED_EAST",
+      "label_m2": 11.01,
+      "location": "TOP_RIGHT"
+    },
+    {
+      "id": "MASTER",
+      "label_m2": 17.55,
+      "location": "LOWER_RIGHT"
+    },
+    {
+      "id": "LIVING",
+      "label_m2": 24.55,
+      "location": "LOWER_LEFT"
+    },
+    {
+      "id": "KITCHEN_DINING",
+      "label_m2": 14.58,
+      "location": "TOP_CENTER"
+    },
+    {
+      "id": "BATH1",
+      "location": "CENTER_RIGHT_BELOW_BED_EAST"
+    },
+    {
+      "id": "BATH2_MASTER",
+      "location": "CENTER_RIGHT_ABOVE_MASTER"
+    },
+    {
+      "id": "BALCONY_A",
+      "location": "BOTTOM_SPANS_LIVING_AND_MASTER"
+    },
+    {
+      "id": "BALCONY_B",
+      "location": "TOP_RIGHT_ABOVE_BED_EAST_AND_NEXT_TO_KITCHEN"
+    },
+    {
+      "id": "ENTRY",
+      "location": "LEFT_MIDDLE"
+    },
+    {
+      "id": "COMMON_HALL",
+      "location": "CENTER"
+    }
+  ],
+  "corrected_openings": {
+    "D03": {
+      "zone": "MASTER17.55",
+      "location": "MASTER_NORTH_WEST_EDGE_NEXT_TO_COMMON_HALL",
+      "source": "KB_AND_NPAY_VISIBLE",
+      "w_mm": null,
+      "h_mm": null,
+      "field_status": "HOLD"
+    },
+    "W03": {
+      "zone": "MASTER17.55",
+      "location": "MASTER_SOUTH_EDGE_FACING_BALCONY_A",
+      "source": "KB_AND_NPAY_VISIBLE",
+      "w_mm": null,
+      "h_mm": null,
+      "window_structure": "UNCONFIRMED",
+      "field_status": "HOLD"
+    },
+    "D07": {
+      "zone": "KITCHEN_TO_BALCONY_B",
+      "location": "KITCHEN_EAST_WALL_ABUTTING_SMALL_TOP_BALCONY",
+      "source": "NO_EXISTING_DOOR_IN_SOURCE_PLAN",
+      "new_structural_cut_approved": false,
+      "field_status": "HOLD"
+    }
+  },
+  "not_inferred": [
+    "structure of real wall",
+    "clear opening widths/heights",
+    "door leaf/frame size",
+    "single versus double glazed sash",
+    "actual customer's line/expansion",
+    "physical construction approval"
+  ],
+  "registry": "https://docs.google.com/spreadsheets/d/1hal5JzdMUR126L2Bn2I9Z0yltdLMrR-MhgF345pUOw8/edit#gid=21112031",
+  "review_status": {
+    "native_skp": "EXECUTED_PASS",
+    "kb_vs_npay_visual": "EXECUTED_PASS",
+    "codex_v4": "IN_PROGRESS_NOT_CLAIMED",
+    "gemini_eye_v4": "NOT_RUN",
+    "gemini_v4": "NOT_RUN",
+    "real_site_dimensions": "NOT_AVAILABLE",
+    "estimate_recalculation": "HOLD"
+  }
+}
