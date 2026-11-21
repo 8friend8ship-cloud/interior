@@ -6,8 +6,8 @@
     "npay_image": "https://drive.google.com/file/d/1nl6698-cEY9dk24spQoFDNPMUuMQnTdE/view",
     "kb_image_url": "https://kbland.kr/se/c/4441",
     "side_by_side": "https://drive.google.com/file/d/1xpFB1eauIqXIMMQLlK917YtTwtx-werj/view",
-    "anotated_user_image": "https://drive.google.com/file/d/1uKwAjdyXx9_9nbQ-9fECoQqIruQE_PT_/view",
-    "comparison": "KB original image rotated 90° CCW matches Npay supplied screenshot room adjacency; actual client unit verified? NO"
+    "comparison": "KB original image rotated 90° CCW matches Npay supplied screenshot room adjacency; actual client unit verified? NO",
+    "annotated_user_image": "https://drive.google.com/file/d/1uKwAjdyXx9_9nbQ-9fECoQqIruQE_PT_/view"
   },
   "previous": {
     "invalid_models": [
@@ -119,10 +119,33 @@
   "review_status": {
     "native_skp": "EXECUTED_PASS",
     "kb_vs_npay_visual": "EXECUTED_PASS",
-    "codex_v4": "IN_PROGRESS_NOT_CLAIMED",
+    "codex_v4": "EXECUTED_READONLY_VISUAL: room/balcony positions PASS, actual D03/W03 door/window geometry HOLD",
     "gemini_eye_v4": "NOT_RUN",
     "gemini_v4": "NOT_RUN",
     "real_site_dimensions": "NOT_AVAILABLE",
-    "estimate_recalculation": "HOLD"
+    "estimate_recalculation": "HOLD",
+    "codex_v4r": "NOT_RUN_POST_MARKER_UPDATE",
+    "codex_review_url": "https://docs.google.com/document/d/1KpIRrqmOzvsG1Nj9hylbV6dXpH3rIVLy/edit",
+    "gemini_eye_v4r": "NOT_RUN",
+    "gemini_v4r": "NOT_RUN",
+    "production_order_gate": "HOLD_NO_W_H_NO_PHYSICAL_OPENING"
+  },
+  "canonical_v4r": {
+    "skp": "https://drive.google.com/file/d/1obShs8El7mQazTqRX-hcDQyCgVzEBZQs/view",
+    "top": "https://drive.google.com/file/d/1KjUVSYt8d9GIdhGo00nI8if_4NxQnUQp/view",
+    "iso": "https://drive.google.com/file/d/1yS-s7FHtFdYfpyEuejCEruyXlQx6YuZe/view",
+    "native_reopen_x1_x2": "EXECUTED_PASS",
+    "qa_overlay_only": [
+      "D03",
+      "W03",
+      "W01",
+      "W06"
+    ],
+    "unchanged_base_opening_count": 14,
+    "real_wall_cut_count": 0,
+    "real_door_or_window_frame_installed": false,
+    "measured_w_h": false,
+    "original_v4_unchanged": true,
+    "latest_working_model": true
   }
 }
