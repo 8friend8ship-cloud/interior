@@ -270,9 +270,11 @@
   },
   "integration_status": {
     "rules_saved_in_github_review_branch": true,
-    "registered_to_sheet": "PENDING",
-    "native_mcp_enforcement": "NOT_IMPLEMENTED",
-    "gemini_and_codex_independent_executions_for_this_rule": "NOT_RUN",
-    "production_deployed": false
+    "registered_to_sheet": "YES: PLAN_SOURCE_CROSSCHECK and DRAWING_PACK_QA_PROTOCOL",
+    "native_mcp_enforcement": "NOT_IMPLEMENTED: future tools must invoke contract and record real receipts",
+    "gemini_and_codex_independent_executions_for_this_rule": "NOT_RUN: configuration only",
+    "production_deployed": false,
+    "validation_script": "scripts/validate-drawing-pack-gates.mjs",
+    "local_node_selftest": "PASS: node --check and --self-test on BOOK-1HE2THGKRA; synthetic incomplete receipt blocked for order"
   }
 }
