@@ -1,0 +1,278 @@
+{
+  "schema": "homedesign.drawing-crosscheck-pack-gates.v1",
+  "effective_date": "2026-11-21",
+  "scope": [
+    "all apartment floorplan searches",
+    "interior SketchUp drafting",
+    "door/window/balcony modeling",
+    "3D asset reuse",
+    "estimate-linked quantity takeoff",
+    "subsequent revisions"
+  ],
+  "project_exception_policy": "Only source-specific differences; global gate cannot be silently bypassed",
+  "reuse_policy": {
+    "last_good_to_first_unfinished": true,
+    "existing_assets_first": true,
+    "original_skps_readonly": true,
+    "one_task_one_receipt": true,
+    "no_duplicate_packs_nodes_triggers": true,
+    "no_paid_generation_without_authorization": true
+  },
+  "source_priority": [
+    {
+      "id": "FIELD",
+      "description": "actual identified customer's unit survey, measured W/H and geotag-neutral site photos",
+      "authority": "highest for site-specific opening",
+      "must_capture": [
+        "unit subtype",
+        "measurements",
+        "timestamp",
+        "original filenames"
+      ]
+    },
+    {
+      "id": "APPROVED",
+      "description": "licensed/approved building plan and permitted structural notes",
+      "authority": "structural validation"
+    },
+    {
+      "id": "KB",
+      "description": "KB Land complex + exact type drawing",
+      "url_template": "https://kbland.kr/",
+      "role": "independent plan reference"
+    },
+    {
+      "id": "NPAY",
+      "description": "Naver Pay Real Estate complex + exact type drawing including user provided shortened link",
+      "example": "https://naver.me/Ge7iHkK0",
+      "role": "independent plan reference"
+    },
+    {
+      "id": "ARCHIVE",
+      "description": "owned Drive SKP/GLB/BLEND and previous quote/takeoff",
+      "role": "reuse candidate and estimated price evidence, not current unit measurement"
+    },
+    {
+      "id": "PUBLIC_PHOTO",
+      "description": "licensed actual photos from same complex and comparable line",
+      "role": "visual reference, not precise measurement"
+    },
+    {
+      "id": "SYNTHETIC",
+      "description": "approved virtual imagery",
+      "role": "design study only; must not assert site facts"
+    }
+  ],
+  "mandatory_pack_roles": [
+    {
+      "pack": "검색팩/수집팩",
+      "stage": "PRE",
+      "task": "collect KB+Npay matched complex,type,area plus property photos and valid source links",
+      "receipt": "source_registry"
+    },
+    {
+      "pack": "자산팩/SketchUp MCP팩",
+      "stage": "PRE",
+      "task": "index existing local and Drive originals, keep hashes and tag reusable components",
+      "receipt": "asset_reuse_matrix"
+    },
+    {
+      "pack": "제미나이눈팩",
+      "stage": "PRE_AND_POST",
+      "task": "visually compare both plan images, rotated/mirrored overlays, section photos, SketchUp top/isometric/camera screenshots",
+      "receipt": "gemini_eye_visual_review"
+    },
+    {
+      "pack": "제미나이팩",
+      "stage": "PRE_AND_POST",
+      "task": "independently propose drawing work plan with dimensions and uncertainties; review final screen and plan consistency",
+      "receipt": "gemini_plan_and_review"
+    },
+    {
+      "pack": "코덱스팩",
+      "stage": "PRE_AND_POST",
+      "task": "independently review work plan, native geometry, room graph, measurement, duplicate BOM, code/JSON and regressions",
+      "receipt": "codex_plan_and_review"
+    },
+    {
+      "pack": "Aside팩/REA팩",
+      "stage": "PRE_AND_POST",
+      "task": "prioritize LOWEST_RISK changes, exceptions, optimization, verification evidence",
+      "receipt": "aside_rea_review"
+    },
+    {
+      "pack": "도면팩/SketchUp팩/Blender팩",
+      "stage": "BUILD",
+      "task": "edit ONLY derived model from approved plan; separate geometry from unmeasured proposals",
+      "receipt": "native_model_sha_and_visuals"
+    },
+    {
+      "pack": "견적팩/경리팩",
+      "stage": "POST",
+      "task": "validate outer balcony sash vs inner single partition vs double sash and doors per physical opening",
+      "receipt": "estimate_bom_unique_keys"
+    },
+    {
+      "pack": "본섬김/하몬써클팩",
+      "stage": "PRE_AND_POST",
+      "task": "usefulness, consumer safety, no misleading dimensions or claims, client deliverable completeness",
+      "receipt": "service_quality_checks"
+    }
+  ],
+  "workflow": [
+    {
+      "id": "G00",
+      "name": "restore state and lock source",
+      "pre": [
+        "same project code",
+        "source original hashes",
+        "existing plans/assets reused",
+        "account/drive/repo matched"
+      ],
+      "output": "source_hash_manifest",
+      "fails_to": "HOLD_INPUT"
+    },
+    {
+      "id": "G01",
+      "name": "plan-source dual confirmation",
+      "pre": [
+        "KB and Npay exact complex",
+        "supply/exclusive area",
+        "unit type/line",
+        "rotate/mirror registration",
+        "room/door/window/balcony counts",
+        "actual photos provenance"
+      ],
+      "output": "KB_NPAY_comparison_and_overlay",
+      "fails_to": "HOLD_SOURCE_MISMATCH"
+    },
+    {
+      "id": "G02",
+      "name": "independent PRE plan",
+      "pre": [
+        "Gemini Eye visual review executed",
+        "Gemini plan executed",
+        "Codex plan executed",
+        "Aside/REA risks reviewed"
+      ],
+      "output": "dual_pre_plan_receipts",
+      "fails_to": "HOLD_MODEL_REVIEW"
+    },
+    {
+      "id": "G03",
+      "name": "opening and path precheck",
+      "pre": [
+        "space graph includes outdoors->entrance->all rooms",
+        "open passage vs actual door vs sliding sash distinction",
+        "door leaf/frame/clear W and H status",
+        "balcony outside vs inside vs room external sash type",
+        "structural restrictions/turning door"
+      ],
+      "output": "door_sash_schedule_with_confidence",
+      "fails_to": "HOLD_OPENING"
+    },
+    {
+      "id": "G04",
+      "name": "native model edit",
+      "pre": [
+        "work on copy not original",
+        "do not map pixel scale to field measurement",
+        "IDs per opening and component",
+        "visual metadata labels for provisional sizes"
+      ],
+      "output": "SKP_or_BLEND+TOP_ISO+hash",
+      "fails_to": "HOLD_GEOMETRY"
+    },
+    {
+      "id": "G05",
+      "name": "independent POST plan/visual/geometry QA",
+      "pre": [
+        "Gemini Eye screenshot comparison executed",
+        "Gemini review executed",
+        "Codex native/static checks executed",
+        "Aside/REA check executed",
+        "original hash preserved",
+        "SketchUp reopen X1/X2",
+        "door/window geometry and collision/hinge swing checked"
+      ],
+      "output": "post_reviews_and_test_receipts",
+      "fails_to": "HOLD_POST_QA"
+    },
+    {
+      "id": "G06",
+      "name": "estimate and work-scope reconciliation",
+      "pre": [
+        "sash location+construction class split",
+        "one physical window/door one charge ID",
+        "measured W×H exists for final quantities",
+        "door accessible path and clear widths verified",
+        "current quote prices not inherited from historical examples"
+      ],
+      "output": "BOQ+duplicate_audit+price_source",
+      "fails_to": "HOLD_ESTIMATE"
+    },
+    {
+      "id": "G07",
+      "name": "publish and audit",
+      "pre": [
+        "visible Drive model/plan/QA URLs verified",
+        "source links/hash stored",
+        "date and independent reviewers genuine",
+        "customer-facing only if actual site + structural checks approved",
+        "no duplicate assets/triggers"
+      ],
+      "output": "final_receipt_and_central_registry",
+      "fails_to": "HOLD_DELIVERY"
+    }
+  ],
+  "specific_geometry_tests": [
+    "entry_main_door_exists_and_opens",
+    "all_bedrooms_and_bathrooms_have_reachable_path_not_necessarily_individual_swing_door",
+    "open_passage_is_not_auto_converted_to_ABS_door",
+    "bedroom_bathroom_doors_have_leaf_frame_clearance_and_swing_collisions_checked",
+    "balcony_sliding_access_charged_as_sash_not_ABS_door",
+    "BALCONY_OUTER_and_INNER_BALCONY_PARTITION_separately_tagged",
+    "double_sash_single_sash_expansion_type_glazing_not_conflated",
+    "window_assemblies_and_estimate_BOM_uniquely_keyed_by_opening_id_location_side",
+    "kitchen_turning_door_cannot_be_confirmed_where_source_plan_has_no_opening",
+    "no_purchased_dimensions_without_real_field_measurements",
+    "verify_original_model_hash_and_native_reopen"
+  ],
+  "receipt_contract": {
+    "each_stage": [
+      "stage_id",
+      "actual_started_at",
+      "actual_finished_at",
+      "agent_or_tool_version",
+      "input_urls_and_hashes",
+      "output_urls_and_hashes",
+      "test_counts",
+      "status",
+      "issues",
+      "next_action"
+    ],
+    "status_enum": [
+      "NOT_RUN",
+      "PLANNED_ONLY",
+      "EXECUTED_PASS",
+      "EXECUTED_FAIL",
+      "HOLD_EVIDENCE"
+    ],
+    "independent_ai_review_required": true,
+    "never_forge_execution_receipt": true,
+    "allow_partial_draft_when_reviews_missing": true,
+    "block_approved_for_order_until_real_field_evidence": true
+  },
+  "existing_refs": {
+    "master_sheet": "https://docs.google.com/spreadsheets/d/1hal5JzdMUR126L2Bn2I9Z0yltdLMrR-MhgF345pUOw8/edit",
+    "prior_sash_rule": "config/estimate-sash-door-qa.v1.json",
+    "sample_project": "HD_YONGHYEON_HYUNDAI1_104"
+  },
+  "integration_status": {
+    "rules_saved_in_github_review_branch": true,
+    "registered_to_sheet": "PENDING",
+    "native_mcp_enforcement": "NOT_IMPLEMENTED",
+    "gemini_and_codex_independent_executions_for_this_rule": "NOT_RUN",
+    "production_deployed": false
+  }
+}
