@@ -59,7 +59,13 @@
     "glazing",
     "frame_system",
     "new_or_existing",
-    "estimate_quantity_basis"
+    "estimate_quantity_basis",
+    "panel_count",
+    "panel_layout_per_track",
+    "opening_boundary_verified",
+    "opening_width_evidence",
+    "source_asset_id",
+    "native_instance_path"
   ],
   "required_fields_per_door": [
     "opening_id",
@@ -125,6 +131,11 @@
       "id": "HD-S-001",
       "severity": "BLOCK_FINAL",
       "message": "Compare KB and Npay/Naver floorplan by complex, exact area/subtype and rotate/mirror; field photos and measurement override unproven schematic."
+    },
+    {
+      "id": "HD-W-PANEL-2700",
+      "severity": "BLOCK_FINAL",
+      "message": "For every continuous physical window opening greater than 2700mm, specify three panels. Verify actual opening width and panel layout; hold incompatible or unknown product configurations. Do not confuse double sash with panel count."
     }
   ],
   "historical_quote_only": {
@@ -188,5 +199,18 @@
     ],
     "review_receipt_policy": "Must be ACTUALLY_EXECUTED, do not count PLANNED_ONLY as PASS",
     "native_pipeline_enforcement": "NOT_DEPLOYED_ON_PRODUCTION"
+  },
+  "window_panel_policy": {
+    "rule_id": "HD-W-PANEL-2700",
+    "threshold_mm": 2700,
+    "comparison": ">",
+    "panel_count": 3,
+    "applies_to": "each verified continuous physical window assembly",
+    "width_basis": "clear horizontal rough opening; do not substitute frame bounds or sum separate assemblies",
+    "below_or_equal": "choose from verified comparable assets; not mandatory two panels",
+    "double_sash": "record independent track/panel layout; three panels does not specify three tracks or three-link mechanics",
+    "incompatible": "HOLD and resolve product/structure constraints",
+    "review_status": "user design standard; empirical SKP leaf counts not yet verified",
+    "enforcement": "review branch config only; production integration pending"
   }
 }
