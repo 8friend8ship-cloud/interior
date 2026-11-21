@@ -1,0 +1,171 @@
+{
+  "schema": "homedesign.estimate.sash-door.qa.v1",
+  "version": "2026-11-21",
+  "usage": "Review-branch gate definition; do not deploy to production without integration QA",
+  "source_examples": [
+    {
+      "project": "Gangdong Godeok Anam 32-pyeong",
+      "year": 2025,
+      "evidence": "2025 quote KCC 230D inner double, KCC 242 expansion double, separate balcony turning door, 5 ABS/frames"
+    },
+    {
+      "project": "Jamsil Hyundai 31-pyeong",
+      "year": 2026,
+      "evidence": "2026 quote KCC 230D inner double, KCC 140 living single/partition, KCC 240 expansion double, 1 turning door"
+    },
+    {
+      "project": "Jeongjatteul Taeyeong Daesiang 33-pyeong",
+      "year": 2026,
+      "evidence": "2026 quote bedroom double and expansion-type sash, turning door separate"
+    }
+  ],
+  "classifications": {
+    "installation_position": [
+      "BALCONY_OUTER",
+      "INNER_BALCONY_PARTITION",
+      "DIRECT_ROOM_EXTERIOR",
+      "DIRECT_KITCHEN_EXTERIOR",
+      "BATHROOM_WINDOW_UNVERIFIED"
+    ],
+    "product_structure": [
+      "SINGLE_SLIDING",
+      "DOUBLE_SASH",
+      "EXPANSION_DOUBLE",
+      "FIXED",
+      "SYSTEM_TURNING_DOOR",
+      "TO_BE_VERIFIED"
+    ],
+    "door_access_type": [
+      "ENTRY_FIRE_OR_MAIN_DOOR",
+      "BEDROOM_ABS",
+      "BATHROOM_WATERPROOF_ABS",
+      "OPTIONAL_MIDDLE_DOOR",
+      "OPEN_PASSAGE",
+      "SLIDING_SASH_ACCESS",
+      "TURNING_DOOR_CONDITIONAL"
+    ]
+  },
+  "required_fields_per_sash": [
+    "opening_id",
+    "zone_from",
+    "zone_to",
+    "installation_position",
+    "product_structure",
+    "measured_clear_w_mm",
+    "measured_clear_h_mm",
+    "measured_by",
+    "field_photo_evidence",
+    "pane_count",
+    "glazing",
+    "frame_system",
+    "new_or_existing",
+    "estimate_quantity_basis"
+  ],
+  "required_fields_per_door": [
+    "opening_id",
+    "zone_from",
+    "zone_to",
+    "door_required",
+    "door_type",
+    "measured_clear_w_mm",
+    "measured_clear_h_mm",
+    "leaf_swing",
+    "frame_scope",
+    "threshold_scope",
+    "accessibility_review",
+    "field_photo_evidence"
+  ],
+  "rules": [
+    {
+      "id": "HD-W-001",
+      "severity": "BLOCK_FINAL",
+      "message": "Do not treat balcony outer sash, interior partition sash, and direct-exterior room double sash as the same item or price basis."
+    },
+    {
+      "id": "HD-W-002",
+      "severity": "BLOCK_FINAL",
+      "message": "No final sash order or quantity without measured clear opening W x H, divided sash segments, frame/glass specification and field evidence."
+    },
+    {
+      "id": "HD-W-003",
+      "severity": "BLOCK_FINAL",
+      "message": "Keep legacy 자평 price unit intact; do not convert to square metres or reuse historical rates without explicit quote/unit validation."
+    },
+    {
+      "id": "HD-W-004",
+      "severity": "BLOCK_DUPLICATE",
+      "message": "For each physical sash assembly use distinct opening ID, side and location. Count inner and outer balcony units separately, but never double-charge the same assembly."
+    },
+    {
+      "id": "HD-D-001",
+      "severity": "BLOCK_FINAL",
+      "message": "Bedroom and bathroom enclosed rooms must each have a validated entrance connection, but an open foyer-living or living-kitchen passage does not automatically require a door."
+    },
+    {
+      "id": "HD-D-002",
+      "severity": "BLOCK_DUPLICATE",
+      "message": "Balcony sliding access is included within its sash item; do not bill an additional ABS door for the same physical opening."
+    },
+    {
+      "id": "HD-D-003",
+      "severity": "BLOCK_FINAL",
+      "message": "A proposed kitchen turning door needs verified existing opening or approved feasible structural design, hinge direction, adjacent kitchen/washer clearance and weather details."
+    },
+    {
+      "id": "HD-D-004",
+      "severity": "BLOCK_FINAL",
+      "message": "Nominal door dimensions on SketchUp schematic are not site measurements. Distinguish frame opening, clear walking width, door leaf and height, plus elderly threshold needs."
+    },
+    {
+      "id": "HD-R-001",
+      "severity": "BLOCK_FINAL",
+      "message": "Build spatial adjacency graph from real room connections; all required living/bedroom/bathroom areas must be reachable from outside entry. Master ensuite bath can be accessed through bedroom."
+    },
+    {
+      "id": "HD-S-001",
+      "severity": "BLOCK_FINAL",
+      "message": "Compare KB and Npay/Naver floorplan by complex, exact area/subtype and rotate/mirror; field photos and measurement override unproven schematic."
+    }
+  ],
+  "historical_quote_only": {
+    "internal_double_ja_pyeong_won": [
+      28800,
+      30600
+    ],
+    "internal_single_ja_pyeong_won_example": 19800,
+    "expansion_double_ja_pyeong_won_example": 33600,
+    "turning_door_per_unit_won": [
+      816000,
+      900000
+    ],
+    "note": "Historic user-owned estimates. Not current procurement prices and not preset for a new customer."
+  },
+  "yonghyeon_concept_ref": {
+    "location_only": true,
+    "project_code": "HD_YONGHYEON_HYUNDAI1_104",
+    "sash_w01_w07": [
+      "W01",
+      "W02",
+      "W03",
+      "W04",
+      "W05",
+      "W06",
+      "W07"
+    ],
+    "normal_abs_door_count": 5,
+    "main_entry_count": 1,
+    "optional_turning_count": 1,
+    "optional_middle_door_count": 0,
+    "balcony_sliding_access_under_sash": 3,
+    "kb": "https://kbland.kr/se/c/4441",
+    "naver": "https://naver.me/Ge7iHkK0",
+    "native_qa": "SketchUp V2R schematic X1/X2 pass; no structural door/window cuts; field W/H HOLD"
+  },
+  "allow_status": [
+    "DRAFT",
+    "FIELD_HOLD",
+    "READY_FOR_INDEPENDENT_QA",
+    "APPROVED_FOR_CUSTOMER",
+    "APPROVED_FOR_ORDER"
+  ]
+}
