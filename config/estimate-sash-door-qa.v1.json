@@ -240,7 +240,53 @@
     "legacy_width_basis": "Existing source native frame bbox used only for study; not rough opening in new design",
     "evidence_dataset": "https://drive.google.com/file/d/1yh8-NloOP4hZLHfvLORb--3tl5n_YjFv/view",
     "evidence_visual_gallery": "https://drive.google.com/file/d/1BfPRWqt6h5HsS2SzcS6odh6Mer88bnhq/view",
-    "production_status": "NOT_DEPLOYED; review branch only; no SketchUp automatic hook"
+    "production_status": "NOT_DEPLOYED; review branch only; no SketchUp automatic hook",
+    "latest_native_asset_learning": {
+      "study_date": "2026-11-21",
+      "models_inspected_total": 5,
+      "older_models": [
+        "GURI_32",
+        "HANAM_32"
+      ],
+      "new_source_cases": [
+        "MAJANG_HYUNDAI_32",
+        "MUNJEONG_OLYMPIC_31",
+        "SEOCHO_DAESUNG_32"
+      ],
+      "sash_candidates_total": 40,
+      "native_visual_count_total": 21,
+      "window_gt3000_new_cases_visible_2sections": 2,
+      "window_gt3000_new_cases_visible_3sections": 6,
+      "historical_source_frame_bbox_not_site_rough_opening": true,
+      "not_verified": [
+        "kitchen_installation_layout",
+        "door_50mm_wall_gap",
+        "physical_opening_w_h",
+        "moving_sash_leaves",
+        "rail_layout",
+        "manufacturer_product_fitness"
+      ],
+      "additional3_data_url": "https://drive.google.com/file/d/1Q5eSUcZJfGX9fbwYkIwGl8MoASApdzw6/view",
+      "additional3_images_url": "https://drive.google.com/file/d/18wbFzBXLNx_LxucSJGJR5byau0VLs4U5/view",
+      "additional3_door_kitchen_url": "https://drive.google.com/file/d/1s_A-ptqpWbhbb2wGPnGrUlzwK9AGxbyO/view",
+      "asset_master_sheet": "https://docs.google.com/spreadsheets/d/15VZRWjlOFxwULsWDnkbH3Iai0ehjLuTBEw3vIJrRRAA/edit#gid=21112133",
+      "door_kitchen_seed_sheet": "https://docs.google.com/spreadsheets/d/15VZRWjlOFxwULsWDnkbH3Iai0ehjLuTBEw3vIJrRRAA/edit#gid=21112135",
+      "codex_first_independent_review": "EXECUTED_PASS_EVIDENCE/HOLD_SITE_AND_MISSING_RAW_IMAGES_AT_FIRST",
+      "codex_second_postfix": "IN_PROGRESS_NOT_YET_PROVEN",
+      "gemini_eye": "NOT_RUN",
+      "aside_pack": "NOT_RUN",
+      "rea_pack": "NOT_RUN",
+      "model_sketchup_v5_modified": false,
+      "production_deployed": false,
+      "new_scheduled_triggers": 0
+    },
+    "review_evidence_gate": [
+      "Search existing OWNED_3D_SKP_130 plus SKP_SASH_PANEL_GEOMETRY_V2 for similar asset BEFORE drawing",
+      "Match actual installation zone and existing frame/leaf/track source; don't use product bounding box as measured rough opening",
+      "Existing two-section and three-section cases co-exist at 3150mm frame bbox; store provenance",
+      "Actual >3000mm rough wall opening may be proposed for three visible glazed sections, pending product/frame/hinge/safety review",
+      "Do not automatically install or order without site measurements and executed independent AI QA receipts"
+    ]
   },
   "legacy_rules": [
     {
