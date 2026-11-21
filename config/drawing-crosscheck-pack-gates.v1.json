@@ -166,9 +166,10 @@
         "open passage vs actual door vs sliding sash distinction",
         "door leaf/frame/clear W and H status",
         "balcony outside vs inside vs room external sash type",
-        "structural restrictions/turning door"
+        "structural restrictions/turning door",
+        "per-opening verified rough W×H, wall thickness, structure, source asset frame envelope and installation clearance; fail-closed precut validation"
       ],
-      "output": "door_sash_schedule_with_confidence",
+      "output": "door_sash_schedule_with_confidence + per_opening_precut_audit",
       "fails_to": "HOLD_OPENING"
     },
     {
@@ -178,7 +179,8 @@
         "work on copy not original",
         "do not map pixel scale to field measurement",
         "IDs per opening and component",
-        "visual metadata labels for provisional sizes"
+        "visual metadata labels for provisional sizes",
+        "precut gate READY for each opening BEFORE any SketchUp cut-face operation; HOLD items are label-only"
       ],
       "output": "SKP_or_BLEND+TOP_ISO+hash",
       "fails_to": "HOLD_GEOMETRY"
@@ -275,6 +277,31 @@
     "gemini_and_codex_independent_executions_for_this_rule": "NOT_RUN: configuration only",
     "production_deployed": false,
     "validation_script": "scripts/validate-drawing-pack-gates.mjs",
-    "local_node_selftest": "PASS: node --check and --self-test on BOOK-1HE2THGKRA; synthetic incomplete receipt blocked for order"
+    "local_node_selftest": "PASS: node --check and --self-test on BOOK-1HE2THGKRA; synthetic incomplete receipt blocked for order",
+    "local_precut_selftest": "PASS Node check/selftest; user project 16/16 HOLD and enforcement exit2",
+    "native_x2_gate": "SketchUp V3 PRE_CUT_HOLD tagging X1/X2 PASS; original geometries unchanged (65 entities)",
+    "independent_codex_review": "ACTUAL read-only Codex 0.162.1 pre-cut review exit0; found bypass, missing IDs, asset fit gate; patched and tested; post-fix independent re-review not run",
+    "gemini_eye_review": "NOT_RUN: existing Chrome Gemini tabs ambiguous 4, no prompt sent"
+  },
+  "pre_cut_dimensional_gate": {
+    "requirement": "MANDATORY PRIOR TO ANY WALL OPENING CUT OR ASSET INSTALLATION",
+    "sources": [
+      "central 3D asset library/ebook",
+      "KB+Npay aligned exact type",
+      "actual client unit photos and measured W,H",
+      "existing SKP native component measurement"
+    ],
+    "manifest_path": "config/hd-yh104-opening-precut-manifest.v1.json",
+    "validator_path": "scripts/audit-opening-precut.mjs",
+    "hold_if": [
+      "site measured W,H missing",
+      "wall thickness/material/structural unknown",
+      "door leaf/frame size not matched to rough opening and install clearance",
+      "GeminiEye/Gemini/Codex independent review not executed",
+      "same-unit photos not matched",
+      "kitchen D07 new opening no structural approval"
+    ],
+    "current_project_status": "V3 NATIVE X1_X2 PASS; 16/16 opening cut HOLD; Codex PRE review exit0, GeminiEye TAB_AMBIGUOUS NOT_RUN; production enforcement NOT_DEPLOYED",
+    "no_cut_policy": "For HOLD opening render semantic reference marker only; never cut wall or install final frames."
   }
 }
