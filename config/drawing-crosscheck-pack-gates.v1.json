@@ -167,7 +167,8 @@
         "door leaf/frame/clear W and H status",
         "balcony outside vs inside vs room external sash type",
         "structural restrictions/turning door",
-        "per-opening verified rough W×H, wall thickness, structure, source asset frame envelope and installation clearance; fail-closed precut validation"
+        "per-opening verified rough W×H, wall thickness, structure, source asset frame envelope and installation clearance; fail-closed precut validation",
+        "Check native 3000mm preference with actual rough opening W; keep existing frame bbox as reference only, inspect inner/outer sash, track and moving-leaf separately"
       ],
       "output": "door_sash_schedule_with_confidence + per_opening_precut_audit",
       "fails_to": "HOLD_OPENING"
@@ -195,7 +196,8 @@
         "Aside/REA check executed",
         "original hash preserved",
         "SketchUp reopen X1/X2",
-        "door/window geometry and collision/hinge swing checked"
+        "door/window geometry and collision/hinge swing checked",
+        "Run scripts/validate-window-panel-rule.mjs and keep rule-test receipt; old 2700 hard rule no longer used"
       ],
       "output": "post_reviews_and_test_receipts",
       "fails_to": "HOLD_POST_QA"
@@ -208,7 +210,8 @@
         "one physical window/door one charge ID",
         "measured W×H exists for final quantities",
         "door accessible path and clear widths verified",
-        "current quote prices not inherited from historical examples"
+        "current quote prices not inherited from historical examples",
+        "For over3000 new design, three sections preferred; two requires independent human/manufacturer approval, not self-submitted URL"
       ],
       "output": "BOQ+duplicate_audit+price_source",
       "fails_to": "HOLD_ESTIMATE"
@@ -281,7 +284,8 @@
     "local_precut_selftest": "PASS Node check/selftest; user project 16/16 HOLD and enforcement exit2",
     "native_x2_gate": "SketchUp V3 PRE_CUT_HOLD tagging X1/X2 PASS; original geometries unchanged (65 entities)",
     "independent_codex_review": "ACTUAL read-only Codex 0.162.1 pre-cut review exit0; found bypass, missing IDs, asset fit gate; patched and tested; post-fix independent re-review not run",
-    "gemini_eye_review": "NOT_RUN: existing Chrome Gemini tabs ambiguous 4, no prompt sent"
+    "gemini_eye_review": "NOT_RUN: existing Chrome Gemini tabs ambiguous 4, no prompt sent",
+    "window_3000_rule": "REVIEW_BRANCH_UPDATED_WITH_34_TESTS; NO_SKETCHUP_NATIVE_PRECUT_HOOK_OR_PRODUCTION_DEPLOY"
   },
   "pre_cut_dimensional_gate": {
     "requirement": "MANDATORY PRIOR TO ANY WALL OPENING CUT OR ASSET INSTALLATION",
@@ -303,5 +307,22 @@
     ],
     "current_project_status": "V3 NATIVE X1_X2 PASS; 16/16 opening cut HOLD; Codex PRE review exit0, GeminiEye TAB_AMBIGUOUS NOT_RUN; production enforcement NOT_DEPLOYED",
     "no_cut_policy": "For HOLD opening render semantic reference marker only; never cut wall or install final frames."
+  },
+  "window_3m_learning_and_qa": {
+    "policy_ref": "config/estimate-sash-door-qa.v1.json#window_panel_policy",
+    "validator": "scripts/validate-window-panel-rule.mjs",
+    "scope": "all future HomeDesign floorplans and window/sash component placements; reviewed design preference, not universal manufacturer code",
+    "width_measure": "REAL continuous rough-opening horizontal width in mm (NOT component bbox or two adjacent openings added together)",
+    "strict_condition": "width_mm > 3000",
+    "recommendation": "three glazed sections/panels preferred for NEW designs; existing SKP two-section cases preserved without automatic conversion",
+    "legacy_rule": "old 2700 hard rule archived not active",
+    "identity": "glazed-section count, moving-leaf count, rail count, inner/out sash track must be separately recorded",
+    "source_natives": "2 projects, 18 sash instances, 10 isolated elevation images; 9 frame bbox >3000 with 5 two-section and 4 three-section; field measurements zero",
+    "codex_qa": "Initial independent execution completed with HOLD findings; code defects patched, 34/34 Node tests PASS; post-patch independent review NOT_RUN",
+    "gemini_eye_qa": "NOT_RUN",
+    "existing_source_handling": "Record historical source ID/instance, source workcopy SHA and native visual; do not claim field approval",
+    "final_order_gate": "HOLD without measured rough W/H, frame dimensions, manufacturer suitability, track/leaf proof and independent review",
+    "workspace": "https://docs.google.com/spreadsheets/d/15VZRWjlOFxwULsWDnkbH3Iai0ehjLuTBEw3vIJrRRAA/edit#gid=21112133",
+    "production_connected": false
   }
 }
