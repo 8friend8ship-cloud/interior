@@ -1,0 +1,567 @@
+{
+  "schema": "homedesign.apartment.opening.precut.v1",
+  "date": "2026-11-21",
+  "project_id": "HD_YONGHYEON_HYUNDAI1_104",
+  "customer_personal_data_included": false,
+  "original_model": "https://drive.google.com/file/d/1rBxCYZbbNG_9FpBCU7DF61Yi4VNL0dHV/view",
+  "original_model_sha256": "3E52D81DF4C8AB40A531585499CD3BC42D9A364378C83306AD2E9DB89733021A",
+  "plan_sources": [
+    {
+      "kind": "KB",
+      "url": "https://kbland.kr/se/c/4441",
+      "drawing_type": "104m2",
+      "unit_specific_verified": false
+    },
+    {
+      "kind": "Npay",
+      "url": "https://naver.me/Ge7iHkK0",
+      "drawing_type": "104.09m2",
+      "unit_specific_verified": false
+    }
+  ],
+  "source_inspection": {
+    "plan_visual_review": true,
+    "numeric_opening_dimensions_on_plan": false,
+    "source_kb_to_npay_rotation_compared": true,
+    "site_photos_of_customer_unit_verified": false
+  },
+  "central_sources": [
+    "https://docs.google.com/document/d/11VnayZ3rXFyZMRrKDIUjcJxIYMQecDMC-X6P5LyCCc0/edit",
+    "https://docs.google.com/document/d/1SHJu6zeJr2O_1Et0X8wpReC8k9-eEr-CMsAOiVV4r6s/edit",
+    "https://docs.google.com/document/d/1UakuSq95Mggo51-RRcEd-bc-XvKD2h1Tf_DXd8ebRp8/edit",
+    "https://docs.google.com/spreadsheets/d/15VZRWjlOFxwULsWDnkbH3Iai0ehjLuTBEw3vIJrRRAA/edit"
+  ],
+  "latest_good": "HD_YONGHYEON_HYUNDAI1_104_SASH_DOOR_QA_V2R_20261121.skp SCHEMATIC_NATIVE_X2_PASS",
+  "first_unfinished": "PRE_CUT_PER_OPENING_ACTUAL_SITE_DIMENSIONS_AND_ASSET_MATCH",
+  "mandatory_pre_cut": [
+    "verified exact unit/subtype",
+    "real opening clear W,H",
+    "wall thickness/material/structure status",
+    "frame rough opening and tolerances",
+    "door swing/access or sash installation type",
+    "real photo/dimension evidence",
+    "qualified asset size and right to use",
+    "GeminiEye+Gemini+Codex actual pre-review receipts",
+    "independent cut-site visual review"
+  ],
+  "notes": [
+    "No reference asset sizes are accepted as customer-site dimensions.",
+    "V2R nominal fits are only 16mm per diagram pixel conceptual coordinate checks.",
+    "D07 kitchen-to-balcony proposed turning door has NO existing door symbol in KB plan.",
+    "W08/W09 even existence remains unconfirmed."
+  ],
+  "openings": [
+    {
+      "id": "D01",
+      "zone": "ENTRANCE",
+      "type": "ENTRY_MAIN_DOOR",
+      "plan_evidence": "KB_DIAGRAM_SYMBOL",
+      "new_cut_proposed": false,
+      "source_dimensions_mm": {
+        "w": null,
+        "h": null,
+        "wall_thickness": null,
+        "sill_z": null,
+        "head_z": null
+      },
+      "source_dimension_evidence": null,
+      "target_room_unit_verified": false,
+      "measured_by": null,
+      "measured_at": null,
+      "field_photo_refs": [],
+      "wall_structure_verified": false,
+      "wall_permission_confirmed": false,
+      "asset_candidate": {
+        "source_type": "REFERENCE_PROXY_ONLY",
+        "reference_size_only": "900x2100",
+        "actual_component_bounding_verified": false,
+        "asset_dimensions_accepted_for_target": false,
+        "rights_verified_for_use": false
+      },
+      "jamb_and_frame_clearance_verified": false,
+      "leaf_swing_and_collision_verified": false,
+      "gate": "HOLD_PRE_CUT_NO_SITE_DIMENSIONS",
+      "safe_geometry_action": "REFERENCE_MARKER_ONLY_NO_WALL_CUT"
+    },
+    {
+      "id": "D02",
+      "zone": "BED1",
+      "type": "BEDROOM_SWING_DOOR",
+      "plan_evidence": "KB_DIAGRAM_SYMBOL",
+      "new_cut_proposed": false,
+      "source_dimensions_mm": {
+        "w": null,
+        "h": null,
+        "wall_thickness": null,
+        "sill_z": null,
+        "head_z": null
+      },
+      "source_dimension_evidence": null,
+      "target_room_unit_verified": false,
+      "measured_by": null,
+      "measured_at": null,
+      "field_photo_refs": [],
+      "wall_structure_verified": false,
+      "wall_permission_confirmed": false,
+      "asset_candidate": {
+        "source_type": "REFERENCE_PROXY_ONLY",
+        "reference_size_only": "800x2100",
+        "actual_component_bounding_verified": false,
+        "asset_dimensions_accepted_for_target": false,
+        "rights_verified_for_use": false
+      },
+      "jamb_and_frame_clearance_verified": false,
+      "leaf_swing_and_collision_verified": false,
+      "gate": "HOLD_PRE_CUT_NO_SITE_DIMENSIONS",
+      "safe_geometry_action": "REFERENCE_MARKER_ONLY_NO_WALL_CUT"
+    },
+    {
+      "id": "D03",
+      "zone": "BED2",
+      "type": "BEDROOM_SWING_DOOR",
+      "plan_evidence": "KB_DIAGRAM_SYMBOL",
+      "new_cut_proposed": false,
+      "source_dimensions_mm": {
+        "w": null,
+        "h": null,
+        "wall_thickness": null,
+        "sill_z": null,
+        "head_z": null
+      },
+      "source_dimension_evidence": null,
+      "target_room_unit_verified": false,
+      "measured_by": null,
+      "measured_at": null,
+      "field_photo_refs": [],
+      "wall_structure_verified": false,
+      "wall_permission_confirmed": false,
+      "asset_candidate": {
+        "source_type": "REFERENCE_PROXY_ONLY",
+        "reference_size_only": "800x2100",
+        "actual_component_bounding_verified": false,
+        "asset_dimensions_accepted_for_target": false,
+        "rights_verified_for_use": false
+      },
+      "jamb_and_frame_clearance_verified": false,
+      "leaf_swing_and_collision_verified": false,
+      "gate": "HOLD_PRE_CUT_NO_SITE_DIMENSIONS",
+      "safe_geometry_action": "REFERENCE_MARKER_ONLY_NO_WALL_CUT"
+    },
+    {
+      "id": "D04",
+      "zone": "BED3",
+      "type": "BEDROOM_SWING_DOOR",
+      "plan_evidence": "KB_DIAGRAM_SYMBOL",
+      "new_cut_proposed": false,
+      "source_dimensions_mm": {
+        "w": null,
+        "h": null,
+        "wall_thickness": null,
+        "sill_z": null,
+        "head_z": null
+      },
+      "source_dimension_evidence": null,
+      "target_room_unit_verified": false,
+      "measured_by": null,
+      "measured_at": null,
+      "field_photo_refs": [],
+      "wall_structure_verified": false,
+      "wall_permission_confirmed": false,
+      "asset_candidate": {
+        "source_type": "REFERENCE_PROXY_ONLY",
+        "reference_size_only": "800x2100",
+        "actual_component_bounding_verified": false,
+        "asset_dimensions_accepted_for_target": false,
+        "rights_verified_for_use": false
+      },
+      "jamb_and_frame_clearance_verified": false,
+      "leaf_swing_and_collision_verified": false,
+      "gate": "HOLD_PRE_CUT_NO_SITE_DIMENSIONS",
+      "safe_geometry_action": "REFERENCE_MARKER_ONLY_NO_WALL_CUT"
+    },
+    {
+      "id": "D05",
+      "zone": "BATH1",
+      "type": "BATHROOM_WATERPROOF_DOOR",
+      "plan_evidence": "KB_DIAGRAM_SYMBOL",
+      "new_cut_proposed": false,
+      "source_dimensions_mm": {
+        "w": null,
+        "h": null,
+        "wall_thickness": null,
+        "sill_z": null,
+        "head_z": null
+      },
+      "source_dimension_evidence": null,
+      "target_room_unit_verified": false,
+      "measured_by": null,
+      "measured_at": null,
+      "field_photo_refs": [],
+      "wall_structure_verified": false,
+      "wall_permission_confirmed": false,
+      "asset_candidate": {
+        "source_type": "REFERENCE_PROXY_ONLY",
+        "reference_size_only": "700x2100",
+        "actual_component_bounding_verified": false,
+        "asset_dimensions_accepted_for_target": false,
+        "rights_verified_for_use": false
+      },
+      "jamb_and_frame_clearance_verified": false,
+      "leaf_swing_and_collision_verified": false,
+      "gate": "HOLD_PRE_CUT_NO_SITE_DIMENSIONS",
+      "safe_geometry_action": "REFERENCE_MARKER_ONLY_NO_WALL_CUT"
+    },
+    {
+      "id": "D06",
+      "zone": "BATH2_EN_SUITE_BED2",
+      "type": "BATHROOM_WATERPROOF_DOOR",
+      "plan_evidence": "KB_DIAGRAM_SYMBOL",
+      "new_cut_proposed": false,
+      "source_dimensions_mm": {
+        "w": null,
+        "h": null,
+        "wall_thickness": null,
+        "sill_z": null,
+        "head_z": null
+      },
+      "source_dimension_evidence": null,
+      "target_room_unit_verified": false,
+      "measured_by": null,
+      "measured_at": null,
+      "field_photo_refs": [],
+      "wall_structure_verified": false,
+      "wall_permission_confirmed": false,
+      "asset_candidate": {
+        "source_type": "REFERENCE_PROXY_ONLY",
+        "reference_size_only": "700x2100",
+        "actual_component_bounding_verified": false,
+        "asset_dimensions_accepted_for_target": false,
+        "rights_verified_for_use": false
+      },
+      "jamb_and_frame_clearance_verified": false,
+      "leaf_swing_and_collision_verified": false,
+      "gate": "HOLD_PRE_CUT_NO_SITE_DIMENSIONS",
+      "safe_geometry_action": "REFERENCE_MARKER_ONLY_NO_WALL_CUT"
+    },
+    {
+      "id": "D07",
+      "zone": "KITCHEN_TO_BALCONY_B",
+      "type": "TURNING_DOOR_PROPOSED",
+      "plan_evidence": "NO_KB_EXISTING_OPENING",
+      "new_cut_proposed": true,
+      "source_dimensions_mm": {
+        "w": null,
+        "h": null,
+        "wall_thickness": null,
+        "sill_z": null,
+        "head_z": null
+      },
+      "source_dimension_evidence": null,
+      "target_room_unit_verified": false,
+      "measured_by": null,
+      "measured_at": null,
+      "field_photo_refs": [],
+      "wall_structure_verified": false,
+      "wall_permission_confirmed": false,
+      "asset_candidate": {
+        "source_type": "GURI32_COMPONENT_UNQUALIFIED",
+        "reference_size_only": "800x2300",
+        "actual_component_bounding_verified": true,
+        "asset_dimensions_accepted_for_target": false,
+        "rights_verified_for_use": false
+      },
+      "jamb_and_frame_clearance_verified": false,
+      "leaf_swing_and_collision_verified": false,
+      "gate": "HOLD_PRE_CUT_NO_SITE_DIMENSIONS",
+      "safe_geometry_action": "REFERENCE_MARKER_ONLY_NO_WALL_CUT"
+    },
+    {
+      "id": "W01",
+      "zone": "LIVING_TO_BALCONY_A",
+      "type": "INNER_PARTITION_SLIDING_SINGLE_OR_DOUBLE_TBD",
+      "plan_evidence": "KB_DIAGRAM_SASH",
+      "new_cut_proposed": false,
+      "source_dimensions_mm": {
+        "w": null,
+        "h": null,
+        "wall_thickness": null,
+        "sill_z": null,
+        "head_z": null
+      },
+      "source_dimension_evidence": null,
+      "target_room_unit_verified": false,
+      "measured_by": null,
+      "measured_at": null,
+      "field_photo_refs": [],
+      "wall_structure_verified": false,
+      "wall_permission_confirmed": false,
+      "asset_candidate": {
+        "source_type": "GURI32_SASH_UNQUALIFIED",
+        "reference_size_only": "3720x2300|4400x2300",
+        "actual_component_bounding_verified": true,
+        "asset_dimensions_accepted_for_target": false,
+        "rights_verified_for_use": false
+      },
+      "jamb_and_frame_clearance_verified": false,
+      "leaf_swing_and_collision_verified": false,
+      "gate": "HOLD_PRE_CUT_NO_SITE_DIMENSIONS",
+      "safe_geometry_action": "REFERENCE_MARKER_ONLY_NO_WALL_CUT"
+    },
+    {
+      "id": "W02",
+      "zone": "BALCONY_A_EXTERIOR",
+      "type": "BALCONY_OUTER_SASH",
+      "plan_evidence": "KB_DIAGRAM_SASH",
+      "new_cut_proposed": false,
+      "source_dimensions_mm": {
+        "w": null,
+        "h": null,
+        "wall_thickness": null,
+        "sill_z": null,
+        "head_z": null
+      },
+      "source_dimension_evidence": null,
+      "target_room_unit_verified": false,
+      "measured_by": null,
+      "measured_at": null,
+      "field_photo_refs": [],
+      "wall_structure_verified": false,
+      "wall_permission_confirmed": false,
+      "asset_candidate": {
+        "source_type": "GURI32_SASH_UNQUALIFIED",
+        "reference_size_only": "4400x2300",
+        "actual_component_bounding_verified": true,
+        "asset_dimensions_accepted_for_target": false,
+        "rights_verified_for_use": false
+      },
+      "jamb_and_frame_clearance_verified": false,
+      "leaf_swing_and_collision_verified": false,
+      "gate": "HOLD_PRE_CUT_NO_SITE_DIMENSIONS",
+      "safe_geometry_action": "REFERENCE_MARKER_ONLY_NO_WALL_CUT"
+    },
+    {
+      "id": "W03",
+      "zone": "BED2_TO_BALCONY_A",
+      "type": "INNER_PARTITION_SLIDING_TBD",
+      "plan_evidence": "KB_DIAGRAM_SASH",
+      "new_cut_proposed": false,
+      "source_dimensions_mm": {
+        "w": null,
+        "h": null,
+        "wall_thickness": null,
+        "sill_z": null,
+        "head_z": null
+      },
+      "source_dimension_evidence": null,
+      "target_room_unit_verified": false,
+      "measured_by": null,
+      "measured_at": null,
+      "field_photo_refs": [],
+      "wall_structure_verified": false,
+      "wall_permission_confirmed": false,
+      "asset_candidate": {
+        "source_type": "NONE",
+        "reference_size_only": "NO_APPROVED_COMPONENT",
+        "actual_component_bounding_verified": false,
+        "asset_dimensions_accepted_for_target": false,
+        "rights_verified_for_use": false
+      },
+      "jamb_and_frame_clearance_verified": false,
+      "leaf_swing_and_collision_verified": false,
+      "gate": "HOLD_PRE_CUT_NO_SITE_DIMENSIONS",
+      "safe_geometry_action": "REFERENCE_MARKER_ONLY_NO_WALL_CUT"
+    },
+    {
+      "id": "W04",
+      "zone": "BED1_DIRECT_EXTERIOR",
+      "type": "ROOM_DOUBLE_SASH_TBD",
+      "plan_evidence": "KB_DIAGRAM_SASH",
+      "new_cut_proposed": false,
+      "source_dimensions_mm": {
+        "w": null,
+        "h": null,
+        "wall_thickness": null,
+        "sill_z": null,
+        "head_z": null
+      },
+      "source_dimension_evidence": null,
+      "target_room_unit_verified": false,
+      "measured_by": null,
+      "measured_at": null,
+      "field_photo_refs": [],
+      "wall_structure_verified": false,
+      "wall_permission_confirmed": false,
+      "asset_candidate": {
+        "source_type": "NONE",
+        "reference_size_only": "NO_APPROVED_COMPONENT",
+        "actual_component_bounding_verified": false,
+        "asset_dimensions_accepted_for_target": false,
+        "rights_verified_for_use": false
+      },
+      "jamb_and_frame_clearance_verified": false,
+      "leaf_swing_and_collision_verified": false,
+      "gate": "HOLD_PRE_CUT_NO_SITE_DIMENSIONS",
+      "safe_geometry_action": "REFERENCE_MARKER_ONLY_NO_WALL_CUT"
+    },
+    {
+      "id": "W05",
+      "zone": "KITCHEN_DIRECT_EXTERIOR",
+      "type": "DIRECT_KITCHEN_SASH_TBD",
+      "plan_evidence": "KB_DIAGRAM_SASH",
+      "new_cut_proposed": false,
+      "source_dimensions_mm": {
+        "w": null,
+        "h": null,
+        "wall_thickness": null,
+        "sill_z": null,
+        "head_z": null
+      },
+      "source_dimension_evidence": null,
+      "target_room_unit_verified": false,
+      "measured_by": null,
+      "measured_at": null,
+      "field_photo_refs": [],
+      "wall_structure_verified": false,
+      "wall_permission_confirmed": false,
+      "asset_candidate": {
+        "source_type": "GURI32_KITCHEN_SASH_UNQUALIFIED",
+        "reference_size_only": "2739x1200",
+        "actual_component_bounding_verified": true,
+        "asset_dimensions_accepted_for_target": false,
+        "rights_verified_for_use": false
+      },
+      "jamb_and_frame_clearance_verified": false,
+      "leaf_swing_and_collision_verified": false,
+      "gate": "HOLD_PRE_CUT_NO_SITE_DIMENSIONS",
+      "safe_geometry_action": "REFERENCE_MARKER_ONLY_NO_WALL_CUT"
+    },
+    {
+      "id": "W06",
+      "zone": "BED3_TO_BALCONY_B",
+      "type": "INNER_PARTITION_SLIDING_TBD",
+      "plan_evidence": "KB_DIAGRAM_SASH",
+      "new_cut_proposed": false,
+      "source_dimensions_mm": {
+        "w": null,
+        "h": null,
+        "wall_thickness": null,
+        "sill_z": null,
+        "head_z": null
+      },
+      "source_dimension_evidence": null,
+      "target_room_unit_verified": false,
+      "measured_by": null,
+      "measured_at": null,
+      "field_photo_refs": [],
+      "wall_structure_verified": false,
+      "wall_permission_confirmed": false,
+      "asset_candidate": {
+        "source_type": "NONE",
+        "reference_size_only": "NO_APPROVED_COMPONENT",
+        "actual_component_bounding_verified": false,
+        "asset_dimensions_accepted_for_target": false,
+        "rights_verified_for_use": false
+      },
+      "jamb_and_frame_clearance_verified": false,
+      "leaf_swing_and_collision_verified": false,
+      "gate": "HOLD_PRE_CUT_NO_SITE_DIMENSIONS",
+      "safe_geometry_action": "REFERENCE_MARKER_ONLY_NO_WALL_CUT"
+    },
+    {
+      "id": "W07",
+      "zone": "BALCONY_B_EXTERIOR",
+      "type": "BALCONY_OUTER_SASH",
+      "plan_evidence": "KB_DIAGRAM_SASH",
+      "new_cut_proposed": false,
+      "source_dimensions_mm": {
+        "w": null,
+        "h": null,
+        "wall_thickness": null,
+        "sill_z": null,
+        "head_z": null
+      },
+      "source_dimension_evidence": null,
+      "target_room_unit_verified": false,
+      "measured_by": null,
+      "measured_at": null,
+      "field_photo_refs": [],
+      "wall_structure_verified": false,
+      "wall_permission_confirmed": false,
+      "asset_candidate": {
+        "source_type": "GURI32_KITCHEN_BALCONY_SASH_UNQUALIFIED",
+        "reference_size_only": "3050x2300",
+        "actual_component_bounding_verified": true,
+        "asset_dimensions_accepted_for_target": false,
+        "rights_verified_for_use": false
+      },
+      "jamb_and_frame_clearance_verified": false,
+      "leaf_swing_and_collision_verified": false,
+      "gate": "HOLD_PRE_CUT_NO_SITE_DIMENSIONS",
+      "safe_geometry_action": "REFERENCE_MARKER_ONLY_NO_WALL_CUT"
+    },
+    {
+      "id": "W08",
+      "zone": "BATHROOM_VENT_OR_WINDOW",
+      "type": "EXISTENCE_UNCONFIRMED",
+      "plan_evidence": "NO_CLEAR_DIAGRAM",
+      "new_cut_proposed": false,
+      "source_dimensions_mm": {
+        "w": null,
+        "h": null,
+        "wall_thickness": null,
+        "sill_z": null,
+        "head_z": null
+      },
+      "source_dimension_evidence": null,
+      "target_room_unit_verified": false,
+      "measured_by": null,
+      "measured_at": null,
+      "field_photo_refs": [],
+      "wall_structure_verified": false,
+      "wall_permission_confirmed": false,
+      "asset_candidate": {
+        "source_type": "NONE",
+        "reference_size_only": "NONE",
+        "actual_component_bounding_verified": false,
+        "asset_dimensions_accepted_for_target": false,
+        "rights_verified_for_use": false
+      },
+      "jamb_and_frame_clearance_verified": false,
+      "leaf_swing_and_collision_verified": false,
+      "gate": "HOLD_PRE_CUT_NO_SITE_DIMENSIONS",
+      "safe_geometry_action": "REFERENCE_MARKER_ONLY_NO_WALL_CUT"
+    },
+    {
+      "id": "W09",
+      "zone": "ENTRANCE_TRANSOM",
+      "type": "EXISTENCE_UNCONFIRMED",
+      "plan_evidence": "NO_CLEAR_DIAGRAM",
+      "new_cut_proposed": false,
+      "source_dimensions_mm": {
+        "w": null,
+        "h": null,
+        "wall_thickness": null,
+        "sill_z": null,
+        "head_z": null
+      },
+      "source_dimension_evidence": null,
+      "target_room_unit_verified": false,
+      "measured_by": null,
+      "measured_at": null,
+      "field_photo_refs": [],
+      "wall_structure_verified": false,
+      "wall_permission_confirmed": false,
+      "asset_candidate": {
+        "source_type": "NONE",
+        "reference_size_only": "NONE",
+        "actual_component_bounding_verified": false,
+        "asset_dimensions_accepted_for_target": false,
+        "rights_verified_for_use": false
+      },
+      "jamb_and_frame_clearance_verified": false,
+      "leaf_swing_and_collision_verified": false,
+      "gate": "HOLD_PRE_CUT_NO_SITE_DIMENSIONS",
+      "safe_geometry_action": "REFERENCE_MARKER_ONLY_NO_WALL_CUT"
+    }
+  ]
+}
