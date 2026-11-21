@@ -205,7 +205,7 @@
     "threshold_mm": 3000,
     "comparison": ">",
     "default_glazed_sections_for_new_design": 3,
-    "mode": "PREFERRED_WITH_APPROVED_EXCEPTION",
+    "mode": "PREFERRED_NEW_DESIGN_WITH_UNTRUSTED_EXCEPTION_HOLD",
     "applies_to": "individually verified continuous window assembly only",
     "width_basis": "site measured rough opening width for final design; existing native frame bbox only to find comparable source assets",
     "at_or_below": "choose verified source asset, e.g. 2-pane or 3-pane on project need; no mandatory 2 panes",
@@ -234,8 +234,13 @@
     },
     "evidence_sheet": "https://docs.google.com/spreadsheets/d/15VZRWjlOFxwULsWDnkbH3Iai0ehjLuTBEw3vIJrRRAA/edit#gid=21112133",
     "evidence_folder": "HD_PANEL_STUDY_NATIVE_20261121",
-    "code_review_status": "PENDING",
-    "enforcement": "REVIEW_BRANCH_ONLY; NO PRODUCTION DEPLOYMENT"
+    "code_review_status": "CODEX_INITIAL_REVIEW_EXECUTED_WITH_HOLD; FIXED_ISSUES; NODE_34_OF_34_PASS; CODEX_POSTFIX_NOT_RUN; GEMINI_EYE_NOT_RUN",
+    "enforcement": "REVIEW_BRANCH_ONLY; NO PRODUCTION DEPLOYMENT",
+    "exception_approval_status": "EXTERNAL_REVIEW_SERVICE_NOT_INTEGRATED; NO_INPUT_FLAGS_OR_URLS_CAN_APPROVE",
+    "legacy_width_basis": "Existing source native frame bbox used only for study; not rough opening in new design",
+    "evidence_dataset": "https://drive.google.com/file/d/1yh8-NloOP4hZLHfvLORb--3tl5n_YjFv/view",
+    "evidence_visual_gallery": "https://drive.google.com/file/d/1BfPRWqt6h5HsS2SzcS6odh6Mer88bnhq/view",
+    "production_status": "NOT_DEPLOYED; review branch only; no SketchUp automatic hook"
   },
   "legacy_rules": [
     {
