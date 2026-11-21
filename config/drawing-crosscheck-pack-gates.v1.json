@@ -357,13 +357,15 @@
       "asset_master_sheet": "https://docs.google.com/spreadsheets/d/15VZRWjlOFxwULsWDnkbH3Iai0ehjLuTBEw3vIJrRRAA/edit#gid=21112133",
       "door_kitchen_seed_sheet": "https://docs.google.com/spreadsheets/d/15VZRWjlOFxwULsWDnkbH3Iai0ehjLuTBEw3vIJrRRAA/edit#gid=21112135",
       "codex_first_independent_review": "EXECUTED_PASS_EVIDENCE/HOLD_SITE_AND_MISSING_RAW_IMAGES_AT_FIRST",
-      "codex_second_postfix": "IN_PROGRESS_NOT_YET_PROVEN",
+      "codex_second_postfix": "EXECUTED_DATA_EVIDENCE_PASS_FIELD_INSTALLATION_HOLD; individual PNG SHA 11/11, partition exclusion 2/2, door PID 26/26, kitchen source definitions 10 verified; Codex native engine/site not run",
       "gemini_eye": "NOT_RUN",
       "aside_pack": "NOT_RUN",
       "rea_pack": "NOT_RUN",
       "model_sketchup_v5_modified": false,
       "production_deployed": false,
-      "new_scheduled_triggers": 0
+      "new_scheduled_triggers": 0,
+      "codex_postfix_report": "https://docs.google.com/document/d/1ihm9vXObKJihjxzOJ03XNJaczv6UA0Lf/edit",
+      "final_ai_receipt": "https://drive.google.com/file/d/1uWnGe7uxhjtj6EqQ4XVH4IGYEEhkbHnv/view"
     },
     "mandatory_before_new_skp_build": true,
     "first_unfinished": "Nested kitchen positions, door wall clearance and same-complex 48py source study",
