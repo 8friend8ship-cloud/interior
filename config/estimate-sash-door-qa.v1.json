@@ -234,7 +234,7 @@
     },
     "evidence_sheet": "https://docs.google.com/spreadsheets/d/15VZRWjlOFxwULsWDnkbH3Iai0ehjLuTBEw3vIJrRRAA/edit#gid=21112133",
     "evidence_folder": "HD_PANEL_STUDY_NATIVE_20261121",
-    "code_review_status": "CODEX_INITIAL_REVIEW_EXECUTED_WITH_HOLD; FIXED_ISSUES; NODE_34_OF_34_PASS; CODEX_POSTFIX_NOT_RUN; GEMINI_EYE_NOT_RUN",
+    "code_review_status": "CODEX_INITIAL_AND_POSTFIX_ACTUALLY_EXECUTED; 11_NATIVE_PNG_HASH_PASS; FIELD_OPENINGS_AND_MOVING_LEAF_HOLD; GEMINI_EYE_NOT_RUN",
     "enforcement": "REVIEW_BRANCH_ONLY; NO PRODUCTION DEPLOYMENT",
     "exception_approval_status": "EXTERNAL_REVIEW_SERVICE_NOT_INTEGRATED; NO_INPUT_FLAGS_OR_URLS_CAN_APPROVE",
     "legacy_width_basis": "Existing source native frame bbox used only for study; not rough opening in new design",
@@ -272,13 +272,15 @@
       "asset_master_sheet": "https://docs.google.com/spreadsheets/d/15VZRWjlOFxwULsWDnkbH3Iai0ehjLuTBEw3vIJrRRAA/edit#gid=21112133",
       "door_kitchen_seed_sheet": "https://docs.google.com/spreadsheets/d/15VZRWjlOFxwULsWDnkbH3Iai0ehjLuTBEw3vIJrRRAA/edit#gid=21112135",
       "codex_first_independent_review": "EXECUTED_PASS_EVIDENCE/HOLD_SITE_AND_MISSING_RAW_IMAGES_AT_FIRST",
-      "codex_second_postfix": "IN_PROGRESS_NOT_YET_PROVEN",
+      "codex_second_postfix": "EXECUTED_DATA_EVIDENCE_PASS_FIELD_INSTALLATION_HOLD; individual PNG SHA 11/11, partition exclusion 2/2, door PID 26/26, kitchen source definitions 10 verified; Codex native engine/site not run",
       "gemini_eye": "NOT_RUN",
       "aside_pack": "NOT_RUN",
       "rea_pack": "NOT_RUN",
       "model_sketchup_v5_modified": false,
       "production_deployed": false,
-      "new_scheduled_triggers": 0
+      "new_scheduled_triggers": 0,
+      "codex_postfix_report": "https://docs.google.com/document/d/1ihm9vXObKJihjxzOJ03XNJaczv6UA0Lf/edit",
+      "final_ai_receipt": "https://drive.google.com/file/d/1uWnGe7uxhjtj6EqQ4XVH4IGYEEhkbHnv/view"
     },
     "review_evidence_gate": [
       "Search existing OWNED_3D_SKP_130 plus SKP_SASH_PANEL_GEOMETRY_V2 for similar asset BEFORE drawing",
