@@ -324,5 +324,72 @@
     "final_order_gate": "HOLD without measured rough W/H, frame dimensions, manufacturer suitability, track/leaf proof and independent review",
     "workspace": "https://docs.google.com/spreadsheets/d/15VZRWjlOFxwULsWDnkbH3Iai0ehjLuTBEw3vIJrRRAA/edit#gid=21112133",
     "production_connected": false
+  },
+  "source_asset_learning": {
+    "evidence": {
+      "study_date": "2026-11-21",
+      "models_inspected_total": 5,
+      "older_models": [
+        "GURI_32",
+        "HANAM_32"
+      ],
+      "new_source_cases": [
+        "MAJANG_HYUNDAI_32",
+        "MUNJEONG_OLYMPIC_31",
+        "SEOCHO_DAESUNG_32"
+      ],
+      "sash_candidates_total": 40,
+      "native_visual_count_total": 21,
+      "window_gt3000_new_cases_visible_2sections": 2,
+      "window_gt3000_new_cases_visible_3sections": 6,
+      "historical_source_frame_bbox_not_site_rough_opening": true,
+      "not_verified": [
+        "kitchen_installation_layout",
+        "door_50mm_wall_gap",
+        "physical_opening_w_h",
+        "moving_sash_leaves",
+        "rail_layout",
+        "manufacturer_product_fitness"
+      ],
+      "additional3_data_url": "https://drive.google.com/file/d/1Q5eSUcZJfGX9fbwYkIwGl8MoASApdzw6/view",
+      "additional3_images_url": "https://drive.google.com/file/d/18wbFzBXLNx_LxucSJGJR5byau0VLs4U5/view",
+      "additional3_door_kitchen_url": "https://drive.google.com/file/d/1s_A-ptqpWbhbb2wGPnGrUlzwK9AGxbyO/view",
+      "asset_master_sheet": "https://docs.google.com/spreadsheets/d/15VZRWjlOFxwULsWDnkbH3Iai0ehjLuTBEw3vIJrRRAA/edit#gid=21112133",
+      "door_kitchen_seed_sheet": "https://docs.google.com/spreadsheets/d/15VZRWjlOFxwULsWDnkbH3Iai0ehjLuTBEw3vIJrRRAA/edit#gid=21112135",
+      "codex_first_independent_review": "EXECUTED_PASS_EVIDENCE/HOLD_SITE_AND_MISSING_RAW_IMAGES_AT_FIRST",
+      "codex_second_postfix": "IN_PROGRESS_NOT_YET_PROVEN",
+      "gemini_eye": "NOT_RUN",
+      "aside_pack": "NOT_RUN",
+      "rea_pack": "NOT_RUN",
+      "model_sketchup_v5_modified": false,
+      "production_deployed": false,
+      "new_scheduled_triggers": 0
+    },
+    "mandatory_before_new_skp_build": true,
+    "first_unfinished": "Nested kitchen positions, door wall clearance and same-complex 48py source study",
+    "allowed_actions": [
+      "Read only source original",
+      "Hash verified isolated copy",
+      "Native component list",
+      "Visual sample QA",
+      "Write asset records and AI feedback actual statuses"
+    ],
+    "forbidden_without_verified_approval": [
+      "Overwrite source SKP",
+      "Infer rough openings from frame bounds",
+      "Guess door 50mm success",
+      "Assume kitchen working triangle is verified",
+      "Move model to production",
+      "Auto pay for new AI generation"
+    ],
+    "workflow_bridge": [
+      "source catalog scan",
+      "asset geometry facts",
+      "visual panel cases",
+      "independent pack review receipts",
+      "candidate selection before wall and openings",
+      "native X1/X2 inspection",
+      "BOM by physical opening unique key"
+    ]
   }
 }
