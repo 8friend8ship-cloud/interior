@@ -133,9 +133,9 @@
       "message": "Compare KB and Npay/Naver floorplan by complex, exact area/subtype and rotate/mirror; field photos and measurement override unproven schematic."
     },
     {
-      "id": "HD-W-PANEL-2700",
+      "id": "HD-W-PANEL-3000",
       "severity": "BLOCK_FINAL",
-      "message": "For every continuous physical window opening greater than 2700mm, specify three panels. Verify actual opening width and panel layout; hold incompatible or unknown product configurations. Do not confuse double sash with panel count."
+      "message": "For NEW designs with independently verified continuous rough opening >3000mm, prefer three visible glazed panels; alternative panel counts require documented review/approval and confirmed manufacturer/product suitability. Preserve legacy 2-section SKP geometries as sourced examples. No width inference from component bbox; do not conflate pane sections, moving leaves and tracks."
     }
   ],
   "historical_quote_only": {
@@ -201,16 +201,49 @@
     "native_pipeline_enforcement": "NOT_DEPLOYED_ON_PRODUCTION"
   },
   "window_panel_policy": {
-    "rule_id": "HD-W-PANEL-2700",
-    "threshold_mm": 2700,
+    "rule_id": "HD-W-PANEL-3000",
+    "threshold_mm": 3000,
     "comparison": ">",
-    "panel_count": 3,
-    "applies_to": "each verified continuous physical window assembly",
-    "width_basis": "clear horizontal rough opening; do not substitute frame bounds or sum separate assemblies",
-    "below_or_equal": "choose from verified comparable assets; not mandatory two panels",
-    "double_sash": "record independent track/panel layout; three panels does not specify three tracks or three-link mechanics",
-    "incompatible": "HOLD and resolve product/structure constraints",
-    "review_status": "user design standard; empirical SKP leaf counts not yet verified",
-    "enforcement": "review branch config only; production integration pending"
-  }
+    "default_glazed_sections_for_new_design": 3,
+    "mode": "PREFERRED_WITH_APPROVED_EXCEPTION",
+    "applies_to": "individually verified continuous window assembly only",
+    "width_basis": "site measured rough opening width for final design; existing native frame bbox only to find comparable source assets",
+    "at_or_below": "choose verified source asset, e.g. 2-pane or 3-pane on project need; no mandatory 2 panes",
+    "historical_exceptions": "Do not auto-convert old SKP components: 3050, 3107, 3162.5, 3200mm have verified 2 glazed sections in source models",
+    "legacy_2700_rule": "ARCHIVED_NOT_ACTIVE",
+    "design_exception_required_fields": [
+      "opening_id",
+      "proposed_panel_count",
+      "source_asset_id",
+      "manufacturer_system",
+      "frame_assembly_verified",
+      "reason",
+      "independent_review_receipt_url",
+      "approved_by"
+    ],
+    "installation_hold": "No site cut or order from component bbox; require measured opening W×H, frame fit, actual moving/fixed leaves per track, glass load/safety, installation constraints",
+    "evidence_origin": {
+      "instances": 18,
+      "source_models": 2,
+      "distinct_component_names": 17,
+      "native_front_visual_receipts": 10,
+      "over3000_two_glass_sections": 5,
+      "over3000_three_glass_sections": 4,
+      "rough_opening_measurements": 0,
+      "movable_leaf_count_confirmations": 0
+    },
+    "evidence_sheet": "https://docs.google.com/spreadsheets/d/15VZRWjlOFxwULsWDnkbH3Iai0ehjLuTBEw3vIJrRRAA/edit#gid=21112133",
+    "evidence_folder": "HD_PANEL_STUDY_NATIVE_20261121",
+    "code_review_status": "PENDING",
+    "enforcement": "REVIEW_BRANCH_ONLY; NO PRODUCTION DEPLOYMENT"
+  },
+  "legacy_rules": [
+    {
+      "id": "HD-W-PANEL-2700",
+      "severity": "BLOCK_FINAL",
+      "message": "For every continuous physical window opening greater than 2700mm, specify three panels. Verify actual opening width and panel layout; hold incompatible or unknown product configurations. Do not confuse double sash with panel count.",
+      "status": "RETIRED_AFTER_SKP_NATIVE_CASE_STUDY_20261121",
+      "reason": "Guri 2739/2904mm and multiple >3000mm native components have 2 visible glass sections; user prefers review at 3000 rather than auto-rule at 2700"
+    }
+  ]
 }
